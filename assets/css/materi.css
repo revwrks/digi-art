@@ -1,0 +1,269 @@
+/**
+ * Digi-Art: Materi Pembelajaran Stylesheet
+ * Desain Tipografi Bersih, Responsif, Mendukung Kartu, Daftar Poin, Prosa, dan Langkah Bertahap.
+ */
+
+.materi-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    background: #ffffff;
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: var(--radius-md, 12px);
+    padding: 14px 18px;
+    box-shadow: var(--shadow-xs);
+}
+
+.materi-search-box {
+    position: relative;
+    min-width: 280px;
+    flex: 1;
+    max-width: 420px;
+}
+
+.materi-search-input {
+    width: 100%;
+    padding: 10px 16px 10px 38px;
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: var(--radius-sm, 8px);
+    background: #ffffff;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.materi-search-input:focus {
+    border-color: var(--primary, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.materi-search-box::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    pointer-events: none;
+}
+
+/* Sections */
+.lesson-section {
+    background: #ffffff;
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: var(--radius-lg, 16px);
+    box-shadow: var(--shadow-sm);
+    padding: 32px 28px;
+    margin-bottom: 24px;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.lesson-header {
+    border-bottom: 1px solid var(--line-subtle, #f1f5f9);
+    padding-bottom: 16px;
+    margin-bottom: 22px;
+}
+
+.sec-number {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--primary, #2563eb);
+    background: var(--primary-light, #eff6ff);
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--primary-subtle, #dbeafe);
+    margin-bottom: 8px;
+}
+
+.lesson-header h2 {
+    font-size: 22px;
+    margin-bottom: 6px;
+    color: var(--navy, #0f172a);
+}
+
+.sec-subtitle {
+    font-size: 14px;
+    color: var(--muted, #64748b);
+    line-height: 1.6;
+}
+
+.teacher-inline-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+.mode-indicator {
+    color: var(--muted, #64748b);
+}
+
+.btn-edit-sec {
+    color: var(--primary, #2563eb);
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+/* 1. Template: Grid Kartu (Cards) */
+.materi-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.materi-card-item {
+    background: var(--surface-subtle, #f8fafc);
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: var(--radius-md, 12px);
+    padding: 20px;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.materi-card-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary, #2563eb);
+    box-shadow: var(--shadow-sm);
+    background: #ffffff;
+}
+
+.materi-card-badge {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--primary, #2563eb);
+    margin-bottom: 8px;
+}
+
+.materi-card-item h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: var(--navy, #0f172a);
+}
+
+.materi-card-item p {
+    font-size: 13px;
+    color: var(--muted, #64748b);
+    line-height: 1.6;
+}
+
+/* 2. Template: Daftar Bersih (List) */
+.materi-list-clean {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.materi-list-clean li {
+    padding: 14px 18px;
+    background: var(--surface-subtle, #f8fafc);
+    border-left: 4px solid var(--primary, #2563eb);
+    border-radius: 0 var(--radius-sm, 8px) var(--radius-sm, 8px) 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.materi-list-clean li strong {
+    color: var(--navy, #0f172a);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.materi-list-clean li span {
+    color: var(--muted, #64748b);
+}
+
+/* 3. Template: Langkah-Langkah (Steps) */
+.materi-steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.materi-step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    background: var(--surface-subtle, #f8fafc);
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid var(--line, #e2e8f0);
+}
+
+.step-num {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--primary, #2563eb);
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.step-content h4 {
+    font-size: 15px;
+    margin-bottom: 4px;
+    color: var(--navy, #0f172a);
+}
+
+.step-content p {
+    font-size: 13px;
+    color: var(--muted, #64748b);
+    line-height: 1.6;
+}
+
+/* 4. Template: Prosa Mengalir (Prose) */
+.materi-prose p {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--ink, #1e293b);
+    margin-bottom: 14px;
+    max-width: 75ch;
+}
+
+/* Source Callout Note */
+.materi-source-callout {
+    margin-top: 24px;
+    padding: 14px 18px;
+    background: #eff6ff;
+    border-left: 4px solid var(--primary, #2563eb);
+    border-radius: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 13px;
+    color: #1e40af;
+    line-height: 1.6;
+}
+
+.source-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+    .materi-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .materi-cards-grid {
+        grid-template-columns: 1fr;
+    }
+    .lesson-section {
+        padding: 22px 16px;
+    }
+}

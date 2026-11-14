@@ -1,0 +1,38 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Operating System Files
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE / Code Editor
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+
+# Temporary & Log Files
+*.log
+tmp/
+temp/
+
+# User Uploads (Ignore uploaded artwork, keep directory structure & protective files)
+/uploads/*
+!/uploads/.htaccess
+!/uploads/index.html
+!/uploads/.gitkeep

@@ -1,0 +1,25 @@
+# =====================================================================
+# Digi-Art: InfinityFree & Apache Web Server Configuration
+# =====================================================================
+
+# 1. Nonaktifkan penjelajahan direktori (Directory Browsing)
+Options -Indexes
+
+# 2. Atur halaman default
+DirectoryIndex index.php index.html
+
+# 3. Lindungi file sensitif agar tidak bisa diunduh langsung lewat browser
+<FilesMatch "(^#.*#|\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist|md|git.*))$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 4. UTF-8 Character Encoding
+AddDefaultCharset UTF-8
+
+# 5. PHP Error Reporting (Disarankan OFF di produksi InfinityFree)
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_value upload_max_filesize 10M
+    php_value post_max_size 12M
+</IfModule>
