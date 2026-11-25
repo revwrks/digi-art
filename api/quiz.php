@@ -5,10 +5,17 @@
 
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../classes/Auth.php';
+require_once __DIR__ . '/../classes/Security.php';
 require_once __DIR__ . '/../classes/Quiz.php';
 
+Security::sendSecurityHeaders();
+
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
-$input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+$rawBody = file_get_contents('php://input');
+if ($rawBody === false) {
+    $rawBody = '';
+}
+$input = json_decode($rawBody, true) ?: $_POST;
 
 $quizModel = new Quiz();
 
@@ -24,17 +31,35 @@ switch ($action) {
             ]);
             exit;
         }
-        $questions = $quizModel->getQuestions();
+        $questions = $quizModel->getQuestionsForPlay();
         echo json_encode(['success' => true, 'questions' => $questions]);
         break;
 
-    case 'submit_score':
+    case 'check_answer':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canAccessProtectedFeatures()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Akses ditolak.']);
             exit;
         }
-        $res = $quizModel->submitScore($input);
+        $res = $quizModel->checkAnswer(
+            (int)($input['question_id'] ?? 0),
+            (int)($input['chosen_index'] ?? -1),
+            (int)($input['time_left'] ?? 0)
+        );
+        echo json_encode($res);
+        break;
+
+    case 'submit_score':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
+        if (!Auth::canAccessProtectedFeatures()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Akses ditolak.']);
+            exit;
+        }
+        $res = $quizModel->submitVerifiedScore();
         echo json_encode($res);
         break;
 
@@ -71,6 +96,8 @@ switch ($action) {
         break;
 
     case 'add_question':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageMateri()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Akses ditolak.']);
@@ -86,12 +113,14 @@ switch ($action) {
         break;
 
     case 'update_question':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageMateri()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Akses ditolak.']);
             exit;
         }
-        $id = (int)($input['id'] ?? $_GET['id'] ?? 0);
+        $id = (int)($input['id'] ?? 0);
         try {
             $quizModel->updateQuestion($id, $input);
             echo json_encode(['success' => true, 'message' => 'Soal dan pilihan jawaban kuis berhasil diperbarui!']);
@@ -102,12 +131,14 @@ switch ($action) {
         break;
 
     case 'delete_question':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageMateri()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Akses ditolak.']);
             exit;
         }
-        $id = (int)($input['id'] ?? $_GET['id'] ?? 0);
+        $id = (int)($input['id'] ?? 0);
         try {
             $quizModel->deleteQuestion($id);
             echo json_encode(['success' => true, 'message' => 'Soal kuis berhasil dihapus.']);

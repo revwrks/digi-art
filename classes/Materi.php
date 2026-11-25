@@ -8,6 +8,7 @@
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/Activity.php';
+require_once __DIR__ . '/Security.php';
 
 class Materi {
     private Database $db;
@@ -146,6 +147,9 @@ class Materi {
                         : 'cards';
         $showCards    = isset($data['show_cards']) ? (int)(bool)$data['show_cards'] : 1;
         $imageUrl     = trim($data['image_url'] ?? '');
+        if ($imageUrl !== '' && !Security::isSafeAssetOrHttpsUrl($imageUrl)) {
+            return ['success' => false, 'message' => 'URL gambar tidak valid. Gunakan aset internal (assets/ atau uploads/) atau tautan HTTPS yang aman.'];
+        }
         $sourceNote   = trim($data['source_note'] ?? '');
         $isActive     = isset($data['is_active']) ? (int)(bool)$data['is_active'] : 1;
 
@@ -238,7 +242,10 @@ class Materi {
         $showCards      = isset($data['show_cards']) ? (int)(bool)$data['show_cards'] : $existing['show_cards'];
         $sourceNote     = isset($data['source_note']) ? trim($data['source_note']) : $existing['source_note'];
         $isActive       = isset($data['is_active']) ? (int)(bool)$data['is_active'] : $existing['is_active'];
-        $imageUrl       = isset($data['image_url']) ? trim($data['image_url']) : ($existing['image_url'] ?? null);
+        $imageUrl       = isset($data['image_url']) ? trim((string)$data['image_url']) : ($existing['image_url'] ?? null);
+        if (isset($data['image_url']) && $imageUrl !== '' && !Security::isSafeAssetOrHttpsUrl($imageUrl)) {
+            return ['success' => false, 'message' => 'URL gambar tidak valid. Gunakan aset internal (assets/ atau uploads/) atau tautan HTTPS yang aman.'];
+        }
 
         // Konten JSON (bisa berupa string JSON atau array PHP)
         $contentJson = $existing['content_json'];

@@ -1,4 +1,5 @@
 <?php
+if (!defined('DIGIART_APP')) { http_response_code(403); exit; }
 $pageTitle = 'Studio Digital — Digi-Art';
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/auth_guard.php';
@@ -340,9 +341,11 @@ if (!empty($currentUser['id'])) {
 
 <!-- Modal Teks Studio Digital -->
 <div class="modal-overlay" id="textToolModal">
-    <div class="modal">
-        <button class="btn-close" onclick="closeTextModal()" aria-label="Tutup Modal">×</button>
-        <h2>Tambahkan Teks ke Kanvas</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="textToolModalTitle">
+        <button type="button" class="btn-close" onclick="closeTextModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 id="textToolModalTitle">Tambahkan Teks ke Kanvas</h2>
         <p class="modal-sub">Atur ukuran, gaya, jenis font, dan warna teks untuk ilustrasimu.</p>
 
         <div class="form-group">
@@ -397,10 +400,14 @@ if (!empty($currentUser['id'])) {
 
 <!-- Modal Konfirmasi Mulai Kanvas Baru -->
 <div class="modal-overlay" id="newCanvasConfirmModal" style="display:none">
-    <div class="modal" style="max-width:440px;text-align:center">
-        <button class="btn-close" onclick="closeNewCanvasModal()" aria-label="Tutup Modal">×</button>
-        <div style="font-size:44px;margin-bottom:8px">🎨</div>
-        <h2 style="margin-bottom:8px">Mulai Lembar Kanvas Baru?</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="newCanvasConfirmTitle" style="max-width:440px;text-align:center">
+        <button type="button" class="btn-close" onclick="closeNewCanvasModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <div style="width:48px;height:48px;margin:0 auto 12px;border-radius:12px;background:var(--primary-light);color:var(--primary);display:grid;place-items:center" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        </div>
+        <h2 id="newCanvasConfirmTitle" style="margin-bottom:8px">Mulai Lembar Kanvas Baru?</h2>
         <p class="modal-sub" style="margin-bottom:20px;line-height:1.6">
             Seluruh lapisan gambar, goresan, dan draf di kanvas saat ini akan dibersihkan dan diganti dengan lembar kerja putih baru. Pastikan Anda sudah mengunduh karya jika ingin menyimpannya.
         </p>
@@ -732,7 +739,7 @@ if (!empty($currentUser['id'])) {
         }
 
         if (exportResult.strippedReferenceCount > 0) {
-            window.showToast?.(`ℹ️ ${exportResult.strippedReferenceCount} lapisan gambar referensi internet disembunyikan. Hanya karya orisinal Anda yang akan dikirim.`);
+            window.showToast?.(`${exportResult.strippedReferenceCount} lapisan gambar referensi internet disembunyikan. Hanya karya orisinal Anda yang akan dikirim.`);
         }
 
         PameranApp.openUploadModal();
@@ -753,7 +760,7 @@ if (!empty($currentUser['id'])) {
             if (exportResult.strippedReferenceCount > 0) {
                 refNotice = `
                     <div style="font-size:11px;color:#b45309;background:#fef3c7;padding:5px 8px;border-radius:6px;margin-top:6px;border:1px solid #fde68a;display:flex;align-items:center;gap:6px">
-                        <span>🛡️</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex-shrink:0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         <span><strong>Anti-Plagiasi:</strong> ${exportResult.strippedReferenceCount} lapisan referensi disaring. Hanya karya orisinal Anda yang dikirim.</span>
                     </div>
                 `;
@@ -762,7 +769,7 @@ if (!empty($currentUser['id'])) {
                 <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 12px;border-radius:8px;display:flex;gap:12px;align-items:center;margin-top:8px">
                     <img src="${pngData}" alt="Preview Karya Studio" style="width:68px;height:44px;object-fit:cover;border-radius:4px;border:1px solid #86efac;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
                     <div style="flex:1">
-                        <strong style="color:#15803d;font-size:13px;display:block">✓ Karya dari Studio Siap Diunggah!</strong>
+                        <strong style="color:#15803d;font-size:13px;display:block">Karya dari Studio Siap Diunggah</strong>
                         <span style="color:#166534;font-size:11px">Gambar otomatis terpasang. Tulis judul & deskripsi karya di atas lalu tekan "Kirim Karya".</span>
                         ${refNotice}
                     </div>

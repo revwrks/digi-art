@@ -16,7 +16,7 @@ class Quiz {
     }
 
     /**
-     * Ambil seluruh pertanyaan kuis
+     * Ambil seluruh pertanyaan kuis (untuk pengelolaan Guru/Admin, termasuk correct_index)
      */
     public function getQuestions(): array {
         return $this->db->fetchAll(
@@ -27,29 +27,132 @@ class Quiz {
     }
 
     /**
-     * Simpan hasil kuis siswa ke tabel skor & leaderboard
+     * Ambil pertanyaan kuis untuk mode bermain (TANPA correct_index) dan inisialisasi sesi kuis terverifikasi
      */
-    public function submitScore(array $data): array {
-        $studentName   = trim($data['student_name'] ?? '');
-        $kelas         = trim($data['kelas'] ?? '');
-        $totalScore    = (int)($data['total_score'] ?? 0);
-        $correctCount  = (int)($data['correct_count'] ?? 0);
-        $totalQuestions= (int)($data['total_questions'] ?? 10);
-        $highestStreak = (int)($data['highest_streak'] ?? 0);
+    public function getQuestionsForPlay(): array {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
 
-        if (empty($studentName)) {
-            $user = Auth::user();
-            $studentName = $user['full_name'] ?? 'Siswa';
-            $kelas = $user['kelas'] ?? 'VIII';
+        $qs = $this->db->fetchAll(
+            "SELECT id, order_num, question, option_a, option_b, option_c, option_d, time_limit, points 
+             FROM quiz_questions 
+             ORDER BY order_num ASC"
+        );
+
+        $_SESSION['quiz_attempt'] = [
+            'question_ids'   => array_map('intval', array_column($qs, 'id')),
+            'answered'       => [],
+            'score'          => 0,
+            'streak'         => 0,
+            'highest_streak' => 0,
+            'correct_count'  => 0,
+            'started_at'     => time()
+        ];
+
+        return $qs;
+    }
+
+    /**
+     * Verifikasi jawaban siswa di sisi server dan hitung poin secara aman
+     */
+    public function checkAnswer(int $questionId, int $chosenIndex, int $timeLeft): array {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+
+        $attempt = $_SESSION['quiz_attempt'] ?? null;
+        if (!is_array($attempt) || empty($attempt['question_ids'])) {
+            return ['success' => false, 'message' => 'Sesi kuis tidak ditemukan atau sudah berakhir.'];
+        }
+
+        if ($questionId <= 0 || !in_array($questionId, $attempt['question_ids'], true)) {
+            return ['success' => false, 'message' => 'Soal tidak termasuk dalam sesi kuis aktif.'];
+        }
+
+        if (!empty($attempt['answered'][$questionId])) {
+            return ['success' => false, 'message' => 'Soal ini sudah dijawab dalam sesi ini.'];
+        }
+
+        $q = $this->db->fetch(
+            "SELECT correct_index, time_limit, points FROM quiz_questions WHERE id = :id LIMIT 1",
+            [':id' => $questionId]
+        );
+        if (!$q) {
+            return ['success' => false, 'message' => 'Soal kuis tidak ditemukan.'];
+        }
+
+        $timeLimit = max(1, (int)$q['time_limit']);
+        $timeLeft = max(0, min($timeLimit, $timeLeft));
+        $correctIndex = (int)$q['correct_index'];
+        $isCorrect = ($chosenIndex >= 0 && $chosenIndex === $correctIndex);
+
+        if ($isCorrect) {
+            $attempt['correct_count']++;
+            $attempt['streak']++;
+            if ($attempt['streak'] > $attempt['highest_streak']) {
+                $attempt['highest_streak'] = $attempt['streak'];
+            }
+            $speedRatio = max(0.1, $timeLeft / max(1, $timeLimit));
+            $base = 500;
+            $speedBonus = round(500 * $speedRatio);
+            $streakBonus = min(500, ($attempt['streak'] - 1) * 100);
+            $scale = max(1, (int)$q['points']) / 1000;
+            $pointsEarned = (int)round(($base + $speedBonus + $streakBonus) * $scale);
+            $attempt['score'] += $pointsEarned;
+        } else {
+            $attempt['streak'] = 0;
+            $pointsEarned = 0;
+        }
+
+        $attempt['answered'][$questionId] = true;
+        $_SESSION['quiz_attempt'] = $attempt;
+
+        return [
+            'success'        => true,
+            'is_correct'     => $isCorrect,
+            'correct_index'  => $correctIndex,
+            'points_earned'  => $pointsEarned,
+            'total_score'    => $attempt['score'],
+            'streak'         => $attempt['streak'],
+            'highest_streak' => $attempt['highest_streak'],
+            'correct_count'  => $attempt['correct_count']
+        ];
+    }
+
+    /**
+     * Simpan hasil kuis terverifikasi dari $_SESSION['quiz_attempt'] ke tabel skor & leaderboard
+     */
+    public function submitVerifiedScore(): array {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+
+        $attempt = $_SESSION['quiz_attempt'] ?? null;
+        if (!is_array($attempt) || empty($attempt['answered']) || count($attempt['answered']) === 0) {
+            return ['success' => false, 'message' => 'Tidak ada sesi kuis aktif yang valid.'];
         }
 
         $user = Auth::user();
         $userId = $user['id'] ?? null;
+        $studentName = trim((string)($user['full_name'] ?? 'Siswa'));
+        if ($studentName === '') {
+            $studentName = 'Siswa';
+        }
+        $kelas = trim((string)($user['kelas'] ?? 'VIII'));
+        if ($kelas === '') {
+            $kelas = 'VIII';
+        }
+
+        $totalScore = (int)($attempt['score'] ?? 0);
+        $correctCount = (int)($attempt['correct_count'] ?? 0);
+        $totalQuestions = max(count($attempt['question_ids'] ?? []), count($attempt['answered']));
+        $highestStreak = (int)($attempt['highest_streak'] ?? 0);
 
         $id = $this->db->insert('quiz_scores', [
             'user_id'         => $userId,
             'student_name'    => $studentName,
-            'kelas'           => $kelas ?: 'VIII',
+            'kelas'           => $kelas,
             'total_score'     => $totalScore,
             'correct_count'   => $correctCount,
             'total_questions' => $totalQuestions,
@@ -57,6 +160,8 @@ class Quiz {
         ]);
 
         Activity::log("Menyelesaikan Kuis Kahoot: skor {$totalScore} pts ({$correctCount}/{$totalQuestions})", $userId, $studentName);
+
+        unset($_SESSION['quiz_attempt']);
 
         // Ambil ranking terkini siswa
         $rankQuery = $this->db->fetch(
@@ -71,6 +176,13 @@ class Quiz {
             'rank'        => $rank,
             'total_score' => $totalScore
         ];
+    }
+
+    /**
+     * Simpan hasil kuis siswa (didelegasikan ke submitVerifiedScore agar skor selalu terverifikasi server)
+     */
+    public function submitScore(array $data = []): array {
+        return $this->submitVerifiedScore();
     }
 
     /**

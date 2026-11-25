@@ -6,10 +6,13 @@
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Activity.php';
+require_once __DIR__ . '/Security.php';
 
 class Auth {
+    private const DEMO_ACCOUNTS = ['murid', 'guru', 'budi', 'ratna'];
+
     /**
-     * Proses Login
+     * Proses Login dengan rate limiting & regenerasi sesi anti session-fixation
      */
     public static function login(string $username, string $password): array {
         $username = trim($username);
@@ -17,10 +20,19 @@ class Auth {
             return ['success' => false, 'message' => 'Username dan password wajib diisi.'];
         }
 
+        $rateLimit = Security::checkLoginRateLimit($username);
+        if (!$rateLimit['allowed']) {
+            return [
+                'success'     => false,
+                'message'     => "Terlalu banyak percobaan login gagal. Silakan coba lagi dalam {$rateLimit['retry_after']} detik.",
+                'retry_after' => $rateLimit['retry_after']
+            ];
+        }
+
         // Cek jika akun yang digunakan adalah akun bawaan saat dinonaktifkan
         require_once __DIR__ . '/SiteSetting.php';
-        $demoAccounts = ['murid', 'guru', 'budi', 'ratna'];
-        if (!SiteSetting::isDemoModeEnabled() && in_array(strtolower($username), $demoAccounts, true)) {
+        if (!SiteSetting::isDemoModeEnabled() && in_array(strtolower($username), self::DEMO_ACCOUNTS, true)) {
+            Security::recordLoginFailure($username);
             return [
                 'success' => false,
                 'message' => 'Akun bawaan ini sedang dinonaktifkan. Silakan gunakan username dan password akun Anda yang telah didaftarkan oleh Guru.'
@@ -31,12 +43,22 @@ class Auth {
         $user = $db->fetch("SELECT * FROM users WHERE username = :u LIMIT 1", [':u' => $username]);
 
         if (!$user) {
+            Security::recordLoginFailure($username);
             return ['success' => false, 'message' => 'Akun tidak ditemukan. Periksa kembali username Anda.'];
         }
 
         if (!password_verify($password, $user['password'])) {
+            Security::recordLoginFailure($username);
             return ['success' => false, 'message' => 'Password salah.'];
         }
+
+        Security::clearLoginFailures($username);
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        session_regenerate_id(true);
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
         // Simpan sesi aman
         unset($user['password']);
@@ -52,14 +74,38 @@ class Auth {
     }
 
     /**
-     * Proses Logout
+     * Proses Logout: bersihkan sesi, hapus cookie sesi, dan hancurkan sesi
      */
     public static function logout(): void {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
         if (isset($_SESSION['user'])) {
             Activity::log("Logout: {$_SESSION['user']['full_name']}");
-            unset($_SESSION['user']);
         }
-        session_destroy();
+
+        $_SESSION = [];
+
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                '',
+                [
+                    'expires'  => time() - 42000,
+                    'path'     => $params['path'] ?: '/',
+                    'domain'   => $params['domain'] ?? '',
+                    'secure'   => (bool)($params['secure'] ?? false),
+                    'httponly' => (bool)($params['httponly'] ?? true),
+                    'samesite' => $params['samesite'] ?? 'Lax',
+                ]
+            );
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
     }
 
     /**
@@ -102,8 +148,7 @@ class Auth {
         if (!SiteSetting::isDemoModeEnabled()) {
             $user = self::user();
             $username = strtolower($user['username'] ?? '');
-            $demoAccounts = ['murid', 'guru', 'budi', 'ratna'];
-            if (in_array($username, $demoAccounts, true)) {
+            if (in_array($username, self::DEMO_ACCOUNTS, true)) {
                 return false;
             }
         }

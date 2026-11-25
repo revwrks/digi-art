@@ -9,15 +9,37 @@ Options -Indexes
 DirectoryIndex index.php index.html
 
 # 3. Lindungi file sensitif agar tidak bisa diunduh langsung lewat browser
-<FilesMatch "(^#.*#|\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist|md|git.*))$">
-    Order allow,deny
-    Deny from all
+<FilesMatch "(^#.*#$|^\.env|\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist|md|pdf|csv|json|env|git.*)$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<FilesMatch "^(daftar_akun_murid_kelas8\.csv|import_murid_kelas8\.sql|update_terakhir\.sql|schema\.sql|README\.md|LICENSE)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
 
 # 4. UTF-8 Character Encoding
 AddDefaultCharset UTF-8
 
-# 5. PHP Error Reporting (Disarankan OFF di produksi InfinityFree)
+# 5. HTTP Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# 6. PHP Error Reporting (Disarankan OFF di produksi InfinityFree)
 <IfModule mod_php.c>
     php_flag display_errors Off
     php_value upload_max_filesize 10M

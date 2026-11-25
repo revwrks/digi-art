@@ -1,3 +1,6 @@
+<?php
+if (!defined('DIGIART_APP')) { http_response_code(403); exit; }
+?>
     </main>
 
     <!-- Global Modals -->
@@ -11,10 +14,15 @@
         <div class="footer-inner">
             <div class="footer-brand">
                 Digi-Art
-                <small>Media Pembelajaran Digital Seni Rupa • SMP Kelas VIII</small>
+                <small>Media Pembelajaran Seni Rupa SMP Kelas VIII</small>
             </div>
+            <nav aria-label="Tautan Cepat Footer" style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;font-weight:600;color:rgba(255,255,255,0.88)">
+                <a href="index.php?page=home">Beranda</a>
+                <a href="index.php?page=pameran">Pameran Karya</a>
+                <a href="index.php?page=studio">Studio Digital</a>
+            </nav>
             <div class="footer-copy">
-                &copy; 2026 Digi-Art • Revworks.
+                &copy; 2026 Digi-Art
             </div>
         </div>
     </footer>

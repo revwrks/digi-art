@@ -5,10 +5,17 @@
 
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../classes/Auth.php';
+require_once __DIR__ . '/../classes/Security.php';
 require_once __DIR__ . '/../classes/User.php';
 
+Security::sendSecurityHeaders();
+
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
-$input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+$rawBody = file_get_contents('php://input');
+if ($rawBody === false) {
+    $rawBody = '';
+}
+$input = json_decode($rawBody, true) ?: $_POST;
 
 $userModel = new User();
 
@@ -41,6 +48,8 @@ switch ($action) {
 
     case 'create_user':
     case 'create_student':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageStudents()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Hanya Guru dan Admin yang dapat menambahkan pengguna baru.']);
@@ -61,12 +70,14 @@ switch ($action) {
 
     case 'delete_user':
     case 'delete_student':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageStudents()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Akses ditolak: Anda tidak memiliki izin.']);
             exit;
         }
-        $id = (int)($input['id'] ?? $_GET['id'] ?? 0);
+        $id = (int)($input['id'] ?? 0);
         $res = $userModel->deleteUser($id);
         if (!$res['success']) {
             http_response_code(403);
@@ -76,12 +87,14 @@ switch ($action) {
 
     case 'update_user':
     case 'edit_user':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageStudents()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Akses ditolak: Anda tidak memiliki izin.']);
             exit;
         }
-        $id = (int)($input['id'] ?? $_GET['id'] ?? 0);
+        $id = (int)($input['id'] ?? 0);
         $data = [
             'full_name' => $input['full_name'] ?? null,
             'username'  => $input['username'] ?? null,

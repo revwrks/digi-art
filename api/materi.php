@@ -5,10 +5,17 @@
 
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../classes/Auth.php';
+require_once __DIR__ . '/../classes/Security.php';
 require_once __DIR__ . '/../classes/Materi.php';
 
+Security::sendSecurityHeaders();
+
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
-$input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+$rawBody = file_get_contents('php://input');
+if ($rawBody === false) {
+    $rawBody = '';
+}
+$input = json_decode($rawBody, true) ?: $_POST;
 
 $materiModel = new Materi();
 
@@ -35,6 +42,8 @@ switch ($action) {
         break;
 
     case 'update_header':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageMateri()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Hanya Guru dan Admin yang dapat mengubah informasi materi.']);
@@ -56,6 +65,8 @@ switch ($action) {
         break;
 
     case 'update_section':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageMateri()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Hanya Guru dan Admin yang dapat mengubah materi.']);
@@ -67,6 +78,8 @@ switch ($action) {
         break;
 
     case 'add_section':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageMateri()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Hanya Guru dan Admin yang dapat menambah materi.']);
@@ -77,17 +90,21 @@ switch ($action) {
         break;
 
     case 'delete_section':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageMateri()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Hanya Guru dan Admin yang dapat menghapus materi.']);
             exit;
         }
-        $id = (int)($input['id'] ?? $_GET['id'] ?? 0);
+        $id = (int)($input['id'] ?? 0);
         $res = $materiModel->deleteSection($id);
         echo json_encode($res);
         break;
 
     case 'toggle_cards':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         if (!Auth::canManageMateri()) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Akses ditolak.']);

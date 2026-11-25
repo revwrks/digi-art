@@ -27,7 +27,7 @@ class StudioDraft {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
             $this->db->exec($sql);
         } catch (PDOException $e) {
-            // Abaikan jika tabel sudah ada atau batasan hak akses DDL
+            error_log('[Digi-Art] StudioDraft::ensureTableExists failed: ' . $e->getMessage());
         }
     }
 
@@ -40,6 +40,14 @@ class StudioDraft {
         }
         if (empty($draftData)) {
             return ['success' => false, 'message' => 'Data draf tidak boleh kosong.'];
+        }
+        if (strlen($draftData) > 4 * 1024 * 1024) {
+            return ['success' => false, 'message' => 'Ukuran draf melebihi batas maksimal 4MB.'];
+        }
+
+        json_decode($draftData, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ['success' => false, 'message' => 'Format data draf tidak valid (harus JSON).'];
         }
 
         try {
@@ -60,7 +68,8 @@ class StudioDraft {
                 'updated_at' => date('Y-m-d H:i:s')
             ];
         } catch (PDOException $e) {
-            return ['success' => false, 'message' => 'Gagal menyimpan draf: ' . $e->getMessage()];
+            error_log('[Digi-Art] StudioDraft::saveDraft failed: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Gagal menyimpan draf ke database. Silakan coba lagi.'];
         }
     }
 
@@ -78,6 +87,7 @@ class StudioDraft {
             $res = $stmt->fetch();
             return $res ?: null;
         } catch (PDOException $e) {
+            error_log('[Digi-Art] StudioDraft::getDraft failed: ' . $e->getMessage());
             return null;
         }
     }
@@ -94,6 +104,7 @@ class StudioDraft {
             $stmt = $this->db->prepare("DELETE FROM studio_drafts WHERE user_id = :uid");
             return $stmt->execute([':uid' => $userId]);
         } catch (PDOException $e) {
+            error_log('[Digi-Art] StudioDraft::clearDraft failed: ' . $e->getMessage());
             return false;
         }
     }

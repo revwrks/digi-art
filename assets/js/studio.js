@@ -273,15 +273,35 @@ class StudioEngine {
         }
     }
 
+    getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
+    async apiPost(url, rawBody = '{}') {
+        const headers = { 'Content-Type': 'application/json' };
+        if (window.App && typeof window.App.apiFetch === 'function') {
+            return window.App.apiFetch(url, {
+                method: 'POST',
+                headers,
+                body: rawBody
+            });
+        }
+        const csrf = this.getCsrfToken();
+        if (csrf) {
+            headers['X-CSRF-Token'] = csrf;
+        }
+        return fetch(url, {
+            method: 'POST',
+            headers,
+            body: rawBody
+        });
+    }
+
     async saveToServerDraft(jsonStr) {
         if (!this.userId || this.isSyncingServer) return;
         this.isSyncingServer = true;
         try {
-            const res = await fetch('api/studio.php?action=save_draft', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: jsonStr
-            });
+            const res = await this.apiPost('api/studio.php?action=save_draft', jsonStr);
             if (res.ok) {
                 const data = await res.json();
                 if (data.success) {
@@ -391,7 +411,7 @@ class StudioEngine {
 
         setTimeout(() => {
             const who = this.userName !== 'Tamu' ? `Akun ${this.userName}` : 'Sesi Anda';
-            window.showToast?.(`✨ Draf gambaran untuk ${who} berhasil dipulihkan!`);
+            window.showToast?.(`Draf gambaran untuk ${who} berhasil dipulihkan.`);
         }, 300);
     }
 
@@ -403,7 +423,7 @@ class StudioEngine {
         // Hapus draf di cloud database akun
         if (this.userId) {
             try {
-                await fetch('api/studio.php?action=clear_draft', { method: 'POST' });
+                await this.apiPost('api/studio.php?action=clear_draft', '{}');
             } catch (e) {
                 console.warn('Gagal menghapus draf cloud akun:', e);
             }
@@ -414,19 +434,19 @@ class StudioEngine {
         const badge = document.getElementById('autosaveStatus');
         if (!badge) return;
 
-        const nameShort = this.userName ? (this.userName.split(' ')[0]) : 'Akun';
+        const nameShort = this.escapeHTML(this.userName ? (this.userName.split(' ')[0]) : 'Akun');
 
         if (status === 'saving') {
             badge.className = 'autosave-pill saving';
             badge.innerHTML = `<span class="dot-indicator"></span> Menyimpan draf ${nameShort}...`;
         } else if (status === 'synced') {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeStr = this.escapeHTML(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
             badge.className = 'autosave-pill';
             badge.innerHTML = `<span class="dot-indicator"></span> Draf Akun: ${nameShort} (Cloud ${timeStr})`;
         } else if (status === 'saved') {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeStr = this.escapeHTML(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
             badge.className = 'autosave-pill';
             badge.innerHTML = `<span class="dot-indicator"></span> Draf Akun: ${nameShort} (${timeStr})`;
         } else if (status === 'error') {
@@ -461,7 +481,7 @@ class StudioEngine {
         this.saveState();
         this.resetZoom();
         this.updateAutosaveUI('cleared');
-        window.showToast?.('📄 Lembar kanvas baru siap digunakan!');
+        window.showToast?.('Lembar kanvas baru siap digunakan.');
     }
 
     /* =========================================================
@@ -534,7 +554,7 @@ class StudioEngine {
         window.setStudioTool?.('move');
         window.closeAllFlyouts?.();
         const activeName = this.getActiveLayer()?.name || 'Layer';
-        window.showToast?.(`✥ Mode Geser Aktif: Seret di kanvas atau gunakan tombol panah untuk memindahkan isi "${activeName}".`);
+        window.showToast?.(`Mode Geser Aktif: Seret di kanvas atau gunakan tombol panah untuk memindahkan isi "${activeName}".`);
     }
 
     /**
@@ -688,32 +708,40 @@ class StudioEngine {
 
         // Render layer teratas di bagian atas daftar (reverse visual)
         const total = this.layers.length;
+        const iconEye = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        const iconEyeOff = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+        const iconMove = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>';
+        const iconUp = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>';
+        const iconDown = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+        const iconTrash = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+        const iconImage = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+
         container.innerHTML = this.layers.map((layer, idx) => `
             <div class="layer-item ${idx === this.activeLayerIndex ? 'active' : ''}" 
                  draggable="true" 
                  data-index="${idx}"
                  onclick="studio.setActiveLayer(${idx})">
-                <button class="layer-vis-btn" onclick="event.stopPropagation(); studio.toggleLayerVisibility(${idx})" title="Sembunyikan/Tampilkan">
-                    ${layer.visible ? '👁️' : '🙈'}
+                <button class="layer-vis-btn" onclick="event.stopPropagation(); studio.toggleLayerVisibility(${idx})" title="Sembunyikan/Tampilkan" aria-label="Sembunyikan atau tampilkan layer">
+                    ${layer.visible ? iconEye : iconEyeOff}
                 </button>
                 <div class="layer-info">
                     <span class="layer-name" title="${this.escapeHTML(layer.name)}">${this.escapeHTML(layer.name)}</span>
                     <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
                         <small>Opacity: ${Math.round(layer.opacity * 100)}%</small>
-                        ${layer.isReference ? '<span class="badge-layer-ref" title="Lapisan ini dari referensi internet dan tidak akan diikutsertakan saat mengirim ke Pameran Karya Siswa" style="background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;border:1px solid #fde68a">🔍 Ref (Anti-Plagiasi)</span>' : ''}
+                        ${layer.isReference ? '<span class="badge-layer-ref" title="Lapisan ini dari referensi internet dan tidak akan diikutsertakan saat mengirim ke Pameran Karya Siswa" style="background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;border:1px solid #fde68a">Ref (Anti-Plagiasi)</span>' : ''}
                     </div>
                 </div>
                 <div class="layer-reorder-btns" onclick="event.stopPropagation()">
-                    <button class="btn-reorder btn-layer-move" onclick="studio.activateMoveLayerTool(${idx})" title="Geser Isi Layer di Kanvas">✥</button>
-                    <button class="btn-reorder" onclick="studio.moveLayerUp(${idx})" ${idx === total - 1 ? 'disabled' : ''} title="Geser Urutan ke Atas">▲</button>
-                    <button class="btn-reorder" onclick="studio.moveLayerDown(${idx})" ${idx === 0 ? 'disabled' : ''} title="Geser Urutan ke Bawah">▼</button>
-                    <button class="btn-reorder btn-layer-del" onclick="studio.deleteLayerByIndex(${idx})" title="Hapus Layer Ini">🗑</button>
+                    <button class="btn-reorder btn-layer-move" onclick="studio.activateMoveLayerTool(${idx})" title="Geser Isi Layer di Kanvas" aria-label="Geser Isi Layer">${iconMove}</button>
+                    <button class="btn-reorder" onclick="studio.moveLayerUp(${idx})" ${idx === total - 1 ? 'disabled' : ''} title="Geser Urutan ke Atas" aria-label="Naikkan Layer">${iconUp}</button>
+                    <button class="btn-reorder" onclick="studio.moveLayerDown(${idx})" ${idx === 0 ? 'disabled' : ''} title="Geser Urutan ke Bawah" aria-label="Turunkan Layer">${iconDown}</button>
+                    <button class="btn-reorder btn-layer-del" onclick="studio.deleteLayerByIndex(${idx})" title="Hapus Layer Ini" aria-label="Hapus Layer">${iconTrash}</button>
                 </div>
                 <div class="layer-preview">
                     ${(() => {
                         let previewSrc = '';
                         try { previewSrc = layer.canvas.toDataURL('image/png'); } catch (e) {}
-                        return previewSrc ? `<img src="${previewSrc}" alt="Preview" width="34" height="24">` : '<span style="font-size:16px">🖼️</span>';
+                        return previewSrc ? `<img src="${previewSrc}" alt="Preview" width="34" height="24">` : iconImage;
                     })()}
                 </div>
             </div>
@@ -1448,10 +1476,10 @@ class StudioEngine {
         tb.id = 'studioMovableTextToolbar';
         tb.className = 'movable-floating-toolbar';
         tb.innerHTML = `
-            <span class="movable-drag-tag" id="movableDragTag" title="Seret di sini atau seret langsung pada teks di kanvas">✥ Geser Teks</span>
-            <button type="button" class="btn-movable-action apply" onclick="studio.commitMovableText()" title="Bubuhkan teks permanen pada posisi ini">✓ Terapkan Teks</button>
-            <button type="button" class="btn-movable-action edit" onclick="studio.editMovableText()" title="Ubah isi teks atau ukuran">✎ Ubah</button>
-            <button type="button" class="btn-movable-action cancel" onclick="studio.cancelMovableText()" title="Batalkan teks ini">✕ Batal</button>
+            <span class="movable-drag-tag" id="movableDragTag" title="Seret di sini atau seret langsung pada teks di kanvas">Geser Teks</span>
+            <button type="button" class="btn-movable-action apply" onclick="studio.commitMovableText()" title="Bubuhkan teks permanen pada posisi ini">Terapkan Teks</button>
+            <button type="button" class="btn-movable-action edit" onclick="studio.editMovableText()" title="Ubah isi teks atau ukuran">Ubah</button>
+            <button type="button" class="btn-movable-action cancel" onclick="studio.cancelMovableText()" title="Batalkan teks ini">Batal</button>
         `;
 
         this.transformWrapper.appendChild(tb);
@@ -1503,7 +1531,7 @@ class StudioEngine {
         window.addEventListener('touchend', onTbDragEnd);
 
         this.renderComposite();
-        window.showToast?.('✥ Teks siap digeser! Sentuh & seret langsung pada teks di kanvas atau gunakan tombol panah.');
+        window.showToast?.('Teks siap digeser. Sentuh & seret langsung pada teks di kanvas atau gunakan tombol panah.');
     }
 
     updateMovableToolbarPosition() {
@@ -1575,7 +1603,7 @@ class StudioEngine {
         this.saveState();
         this.triggerAutosave();
 
-        window.showToast?.('✓ Teks berhasil dibubuhkan tepat 1:1 sesuai posisi yang Anda letakkan!');
+        window.showToast?.('Teks berhasil dibubuhkan tepat 1:1 sesuai posisi yang Anda letakkan.');
     }
 
     drawTextObject(textObj, targetCtx = null) {
@@ -1703,10 +1731,10 @@ class StudioEngine {
             this.saveState();
             this.triggerAutosave();
 
-            // Otomatis aktifkan tool Geser Layer (✥) agar siswa langsung dapat memindahkan posisi gambar di kanvas
+            // Otomatis aktifkan tool Geser Layer agar siswa langsung dapat memindahkan posisi gambar di kanvas
             this.activateMoveLayerTool();
 
-            window.showToast?.(`✓ "${cleanTitle}" dimuat di layer tersendiri! Anda dapat menggeser posisi gambar di kanvas (tool ✥), mengatur transparansi di panel Lapisan (📑), atau menghapusnya.`);
+            window.showToast?.(`"${cleanTitle}" dimuat di layer tersendiri. Anda dapat menggeser posisi gambar di kanvas, mengatur transparansi di panel Lapisan, atau menghapusnya.`);
         };
         img.onerror = () => {
             window.showToast?.('Gagal memuat gambar referensi.');
@@ -1734,7 +1762,7 @@ class StudioEngine {
                 this.renderLayersUI();
                 this.saveState();
                 this.triggerAutosave();
-                window.showToast?.('✓ Panduan tracing transparan siap dijiplak!');
+                window.showToast?.('Panduan tracing transparan siap dijiplak.');
             };
             img.src = imgSource;
             return;
@@ -1805,7 +1833,7 @@ class StudioEngine {
         }
 
         const labels = ['Grid Dinonaktifkan', 'Grid Komposisi 3x3 (Rule of Thirds)', 'Grid Kotak Simetris (8x8)'];
-        window.showToast?.(`▦ ${labels[this.gridMode]}`);
+        window.showToast?.(labels[this.gridMode]);
     }
 
     /* =========================================================
@@ -1919,7 +1947,7 @@ class StudioEngine {
 
         const prevState = this.history[this.history.length - 1];
         this.restoreState(prevState);
-        window.showToast?.('↶ Undo');
+        window.showToast?.('Undo');
     }
 
     redo() {
@@ -1931,7 +1959,7 @@ class StudioEngine {
         const nextState = this.future.pop();
         this.history.push(nextState);
         this.restoreState(nextState);
-        window.showToast?.('↷ Redo');
+        window.showToast?.('Redo');
     }
 
     restoreState(state) {
@@ -2036,8 +2064,8 @@ class StudioEngine {
                 reason: 'NO_ORIGINAL_ARTWORK',
                 referenceLayersCount,
                 message: referenceLayersCount > 0
-                    ? '⚠️ Lapisan gambar referensi dari internet otomatis disembunyikan. Silakan buat gambar ilustrasi karya Anda sendiri di atas kanvas sebelum mengirim ke Pameran!'
-                    : '⚠️ Kanvas masih kosong. Silakan gambar karya Anda sendiri terlebih dahulu sebelum mengirim ke Pameran Karya Siswa!'
+                    ? 'Lapisan gambar referensi dari internet otomatis disembunyikan. Silakan buat gambar ilustrasi karya Anda sendiri di atas kanvas sebelum mengirim ke Pameran.'
+                    : 'Kanvas masih kosong. Silakan gambar karya Anda sendiri terlebih dahulu sebelum mengirim ke Pameran Karya Siswa.'
             };
         }
 
@@ -2131,7 +2159,7 @@ class StudioEngine {
             a.click();
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-            window.showToast?.(`💾 Karya berhasil diunduh dalam format ${ext.toUpperCase()} (${filename})!`);
+            window.showToast?.(`Karya berhasil diunduh dalam format ${ext.toUpperCase()} (${filename}).`);
         }, mime, 0.95);
     }
 

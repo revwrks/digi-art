@@ -6,9 +6,18 @@
 
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../classes/Auth.php';
+require_once __DIR__ . '/../classes/Security.php';
 require_once __DIR__ . '/../classes/StudioDraft.php';
 
+Security::sendSecurityHeaders();
+
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
+$rawBody = file_get_contents('php://input');
+if ($rawBody === false) {
+    $rawBody = '';
+}
+$input = json_decode($rawBody, true) ?: $_POST;
+
 $user = Auth::user();
 
 if (!$user || empty($user['id'])) {
@@ -25,16 +34,22 @@ $draftModel = new StudioDraft();
 
 switch ($action) {
     case 'save_draft':
-        $raw = file_get_contents('php://input');
-        if (empty($raw)) {
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
+        $raw = $rawBody;
+        if ($raw === '') {
             $raw = $_POST['draft_data'] ?? '';
         }
         if (empty($raw)) {
+            http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Data gambar draf kosong.']);
             exit;
         }
 
         $res = $draftModel->saveDraft($userId, $raw);
+        if (empty($res['success'])) {
+            http_response_code(400);
+        }
         echo json_encode($res);
         break;
 
@@ -58,6 +73,8 @@ switch ($action) {
         break;
 
     case 'clear_draft':
+        Security::requireMethod('POST');
+        Security::requireCsrf($rawBody);
         $ok = $draftModel->clearDraft($userId);
         echo json_encode([
             'success' => $ok,

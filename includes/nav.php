@@ -1,4 +1,5 @@
 <?php
+if (!defined('DIGIART_APP')) { http_response_code(403); exit; }
 require_once __DIR__ . '/../classes/SiteSetting.php';
 
 $currentPage = $_GET['page'] ?? 'home';
@@ -14,34 +15,34 @@ $isDemoMode  = SiteSetting::isDemoModeEnabled();
 
     <!-- Desktop Navigation Menu -->
     <nav class="nav-menu desktop-only" aria-label="Menu Utama">
-        <a href="index.php?page=home" class="nav-link <?= $currentPage === 'home' ? 'active' : '' ?>">
+        <a href="index.php?page=home" class="nav-link <?= $currentPage === 'home' ? 'active' : '' ?>"<?= $currentPage === 'home' ? ' aria-current="page"' : '' ?>>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             Beranda
         </a>
         <?php if (!$isProtected || $isDemoMode): ?>
-        <a href="index.php?page=materi" class="nav-link <?= $currentPage === 'materi' ? 'active' : '' ?>">
+        <a href="index.php?page=materi" class="nav-link <?= $currentPage === 'materi' ? 'active' : '' ?>"<?= $currentPage === 'materi' ? ' aria-current="page"' : '' ?>>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10m-10 4h10"/></svg>
             Materi
         </a>
-        <a href="index.php?page=kuis" class="nav-link <?= $currentPage === 'kuis' ? 'active' : '' ?>">
+        <a href="index.php?page=kuis" class="nav-link <?= $currentPage === 'kuis' ? 'active' : '' ?>"<?= $currentPage === 'kuis' ? ' aria-current="page"' : '' ?>>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             Kuis
         </a>
-        <a href="index.php?page=referensi" class="nav-link <?= $currentPage === 'referensi' ? 'active' : '' ?>">
+        <a href="index.php?page=referensi" class="nav-link <?= $currentPage === 'referensi' ? 'active' : '' ?>"<?= $currentPage === 'referensi' ? ' aria-current="page"' : '' ?>>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             Media Referensi
         </a>
-        <a href="index.php?page=studio" class="nav-link <?= $currentPage === 'studio' ? 'active' : '' ?>">
+        <a href="index.php?page=studio" class="nav-link <?= $currentPage === 'studio' ? 'active' : '' ?>"<?= $currentPage === 'studio' ? ' aria-current="page"' : '' ?>>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m18 2 4 4-14 14H4v-4L18 2z"/></svg>
             Studio Digital
         </a>
         <?php endif; ?>
-        <a href="index.php?page=pameran" class="nav-link <?= $currentPage === 'pameran' ? 'active' : '' ?>">
+        <a href="index.php?page=pameran" class="nav-link <?= $currentPage === 'pameran' ? 'active' : '' ?>"<?= $currentPage === 'pameran' ? ' aria-current="page"' : '' ?>>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             Pameran
         </a>
         <?php if (Auth::canManageMateri()): ?>
-        <a href="index.php?page=dashboard" class="nav-link teacher-only-link <?= $currentPage === 'dashboard' ? 'active' : '' ?>">
+        <a href="index.php?page=dashboard" class="nav-link teacher-only-link <?= $currentPage === 'dashboard' ? 'active' : '' ?>"<?= $currentPage === 'dashboard' ? ' aria-current="page"' : '' ?>>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
             Dashboard Guru
         </a>
@@ -51,12 +52,12 @@ $isDemoMode  = SiteSetting::isDemoModeEnabled();
     <!-- User & Auth Actions -->
     <div class="nav-user-actions">
         <span id="navRoleBadge" class="role-badge" style="display:none"></span>
-        <button id="btnNavUser" class="btn-nav-auth" onclick="App.openLoginModal()" aria-label="Masuk Akun">
+        <button type="button" id="btnNavUser" class="btn-nav-auth" onclick="App.openLoginModal()" aria-label="Masuk Akun">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <span>Masuk</span>
         </button>
-        <!-- Mobile Hamburger Toggle Button (iPhone & Mobile Viewports) -->
-        <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Buka Menu Navigasi" onclick="App.toggleMobileNav()">
+        <!-- Mobile Hamburger Toggle Button -->
+        <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Buka Menu Navigasi" aria-expanded="false" aria-controls="mobileNavDrawer" onclick="App.toggleMobileNav()">
             <span></span>
             <span></span>
             <span></span>
@@ -72,7 +73,9 @@ $isDemoMode  = SiteSetting::isDemoModeEnabled();
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 8c.5-3 1-5 4-7"/><path d="M14.5 17.5 4.5 7.5"/></svg>
             Digi<span class="dot">-</span><span class="art">Art</span>
         </a>
-        <button class="btn-drawer-close" id="mobileNavClose" onclick="App.closeMobileNav()" aria-label="Tutup Menu">✕</button>
+        <button type="button" class="btn-drawer-close" id="mobileNavClose" onclick="App.closeMobileNav()" aria-label="Tutup Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
     </div>
 
     <div class="drawer-user-info" id="drawerUserInfo">
@@ -83,47 +86,47 @@ $isDemoMode  = SiteSetting::isDemoModeEnabled();
         </div>
     </div>
 
-    <nav class="drawer-menu-list">
-        <a href="index.php?page=home" class="drawer-item <?= $currentPage === 'home' ? 'active' : '' ?>" onclick="App.closeMobileNav()">
+    <nav class="drawer-menu-list" aria-label="Daftar Menu Mobile">
+        <a href="index.php?page=home" class="drawer-item <?= $currentPage === 'home' ? 'active' : '' ?>"<?= $currentPage === 'home' ? ' aria-current="page"' : '' ?> onclick="App.closeMobileNav()">
             <span class="drawer-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </span>
             <span class="drawer-text">Beranda</span>
         </a>
         <?php if (!$isProtected || $isDemoMode): ?>
-        <a href="index.php?page=materi" class="drawer-item <?= $currentPage === 'materi' ? 'active' : '' ?>" onclick="App.closeMobileNav()">
+        <a href="index.php?page=materi" class="drawer-item <?= $currentPage === 'materi' ? 'active' : '' ?>"<?= $currentPage === 'materi' ? ' aria-current="page"' : '' ?> onclick="App.closeMobileNav()">
             <span class="drawer-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10m-10 4h10"/></svg>
             </span>
             <span class="drawer-text">Materi</span>
         </a>
-        <a href="index.php?page=kuis" class="drawer-item <?= $currentPage === 'kuis' ? 'active' : '' ?>" onclick="App.closeMobileNav()">
+        <a href="index.php?page=kuis" class="drawer-item <?= $currentPage === 'kuis' ? 'active' : '' ?>"<?= $currentPage === 'kuis' ? ' aria-current="page"' : '' ?> onclick="App.closeMobileNav()">
             <span class="drawer-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             </span>
             <span class="drawer-text">Kuis Interaktif</span>
         </a>
-        <a href="index.php?page=referensi" class="drawer-item <?= $currentPage === 'referensi' ? 'active' : '' ?>" onclick="App.closeMobileNav()">
+        <a href="index.php?page=referensi" class="drawer-item <?= $currentPage === 'referensi' ? 'active' : '' ?>"<?= $currentPage === 'referensi' ? ' aria-current="page"' : '' ?> onclick="App.closeMobileNav()">
             <span class="drawer-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             </span>
             <span class="drawer-text">Media Referensi</span>
         </a>
-        <a href="index.php?page=studio" class="drawer-item <?= $currentPage === 'studio' ? 'active' : '' ?>" onclick="App.closeMobileNav()">
+        <a href="index.php?page=studio" class="drawer-item <?= $currentPage === 'studio' ? 'active' : '' ?>"<?= $currentPage === 'studio' ? ' aria-current="page"' : '' ?> onclick="App.closeMobileNav()">
             <span class="drawer-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m18 2 4 4-14 14H4v-4L18 2z"/></svg>
             </span>
             <span class="drawer-text">Studio Digital</span>
         </a>
         <?php endif; ?>
-        <a href="index.php?page=pameran" class="drawer-item <?= $currentPage === 'pameran' ? 'active' : '' ?>" onclick="App.closeMobileNav()">
+        <a href="index.php?page=pameran" class="drawer-item <?= $currentPage === 'pameran' ? 'active' : '' ?>"<?= $currentPage === 'pameran' ? ' aria-current="page"' : '' ?> onclick="App.closeMobileNav()">
             <span class="drawer-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             </span>
             <span class="drawer-text">Galeri Pameran</span>
         </a>
         <?php if (Auth::canManageMateri()): ?>
-        <a href="index.php?page=dashboard" class="drawer-item teacher-only-link <?= $currentPage === 'dashboard' ? 'active' : '' ?>" onclick="App.closeMobileNav()">
+        <a href="index.php?page=dashboard" class="drawer-item teacher-only-link <?= $currentPage === 'dashboard' ? 'active' : '' ?>"<?= $currentPage === 'dashboard' ? ' aria-current="page"' : '' ?> onclick="App.closeMobileNav()">
             <span class="drawer-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
             </span>
@@ -133,22 +136,22 @@ $isDemoMode  = SiteSetting::isDemoModeEnabled();
     </nav>
 </aside>
 
-<!-- Fixed Native-Feel iOS Bottom Tab Bar (Optimized for One-Thumb Reach) -->
+<!-- Fixed Mobile Bottom Tab Bar -->
 <nav class="mobile-bottom-bar" aria-label="Navigasi Cepat Mobile">
-    <a href="index.php?page=home" class="bottom-tab <?= $currentPage === 'home' ? 'active' : '' ?>">
+    <a href="index.php?page=home" class="bottom-tab <?= $currentPage === 'home' ? 'active' : '' ?>"<?= $currentPage === 'home' ? ' aria-current="page"' : '' ?>>
         <span class="tab-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </span>
         <span class="tab-label">Beranda</span>
     </a>
     <?php if (!$isProtected || $isDemoMode): ?>
-    <a href="index.php?page=materi" class="bottom-tab <?= $currentPage === 'materi' ? 'active' : '' ?>">
+    <a href="index.php?page=materi" class="bottom-tab <?= $currentPage === 'materi' ? 'active' : '' ?>"<?= $currentPage === 'materi' ? ' aria-current="page"' : '' ?>>
         <span class="tab-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>
         </span>
         <span class="tab-label">Materi</span>
     </a>
-    <a href="index.php?page=studio" class="bottom-tab highlight-studio <?= $currentPage === 'studio' ? 'active' : '' ?>">
+    <a href="index.php?page=studio" class="bottom-tab highlight-studio <?= $currentPage === 'studio' ? 'active' : '' ?>"<?= $currentPage === 'studio' ? ' aria-current="page"' : '' ?>>
         <div class="studio-tab-circle">
             <span class="tab-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" aria-hidden="true"><path d="m18 2 4 4-14 14H4v-4L18 2z"/></svg>
@@ -156,25 +159,25 @@ $isDemoMode  = SiteSetting::isDemoModeEnabled();
         </div>
         <span class="tab-label">Studio</span>
     </a>
-    <a href="index.php?page=kuis" class="bottom-tab <?= $currentPage === 'kuis' ? 'active' : '' ?>">
+    <a href="index.php?page=kuis" class="bottom-tab <?= $currentPage === 'kuis' ? 'active' : '' ?>"<?= $currentPage === 'kuis' ? ' aria-current="page"' : '' ?>>
         <span class="tab-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         </span>
         <span class="tab-label">Kuis</span>
     </a>
     <?php endif; ?>
-    <a href="index.php?page=pameran" class="bottom-tab <?= $currentPage === 'pameran' ? 'active' : '' ?>">
+    <a href="index.php?page=pameran" class="bottom-tab <?= $currentPage === 'pameran' ? 'active' : '' ?>"<?= $currentPage === 'pameran' ? ' aria-current="page"' : '' ?>>
         <span class="tab-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </span>
         <span class="tab-label">Pameran</span>
     </a>
     <?php if ($isProtected && !$isDemoMode): ?>
-    <a href="javascript:void(0)" onclick="App.openLoginModal()" class="bottom-tab">
+    <button type="button" class="bottom-tab" onclick="App.openLoginModal()">
         <span class="tab-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </span>
         <span class="tab-label">Masuk</span>
-    </a>
+    </button>
     <?php endif; ?>
 </nav>

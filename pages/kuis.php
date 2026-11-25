@@ -1,5 +1,6 @@
 <?php
-$pageTitle = 'Kuis Interaktif Kahoot — Digi-Art';
+if (!defined('DIGIART_APP')) { http_response_code(403); exit; }
+$pageTitle = 'Kuis Interaktif Seni Rupa — Digi-Art';
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/auth_guard.php';
 ?>

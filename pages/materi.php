@@ -1,4 +1,5 @@
 <?php
+if (!defined('DIGIART_APP')) { http_response_code(403); exit; }
 require_once __DIR__ . '/../classes/Materi.php';
 $materiModel  = new Materi();
 $materiHeader = $materiModel->getHeader();

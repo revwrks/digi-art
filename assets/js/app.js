@@ -11,10 +11,77 @@ const App = {
         this.bindEvents();
     },
 
+    getCsrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return (meta && meta.getAttribute('content')) || window.__csrfToken || '';
+    },
+
+    setCsrfToken(token) {
+        if (!token) return;
+        window.__csrfToken = token;
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) {
+            meta.setAttribute('content', token);
+        }
+    },
+
+    apiFetch(url, options = {}) {
+        const mergedOptions = { ...options };
+        const headers = {
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(options.headers || {})
+        };
+        const method = (options.method || 'GET').toUpperCase();
+
+        if (method !== 'GET' && method !== 'HEAD') {
+            headers['X-CSRF-Token'] = this.getCsrfToken();
+            const hasContentType = Object.keys(headers).some(
+                (key) => key.toLowerCase() === 'content-type'
+            );
+            if (typeof options.body === 'string' && !hasContentType) {
+                headers['Content-Type'] = 'application/json';
+            }
+        }
+
+        mergedOptions.method = method;
+        mergedOptions.headers = headers;
+        return fetch(url, mergedOptions);
+    },
+
+    safeUrl(url, fallback = 'assets/img/sample-volcano-art.png') {
+        if (typeof url !== 'string') return fallback;
+        const u = url.trim();
+        if (!u || /[\u0000-\u001F\u007F]/.test(u)) return fallback;
+
+        if ((u.startsWith('assets/') || u.startsWith('uploads/')) && !u.includes('..') && !u.includes('\\')) {
+            return u;
+        }
+
+        if (/^data:image\/(png|jpeg|jpg|webp|svg\+xml);base64,[A-Za-z0-9+/=\s]+$/i.test(u)) {
+            return u;
+        }
+
+        if (/^https?:\/\//i.test(u)) {
+            try {
+                const parsed = new URL(u, window.location.origin);
+                if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                    return parsed.href;
+                }
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        return fallback;
+    },
+
     async checkAuthStatus() {
         try {
-            const res = await fetch('api/auth.php?action=status');
+            const res = await this.apiFetch('api/auth.php?action=status');
             const data = await res.json();
+            if (data.csrf_token) {
+                this.setCsrfToken(data.csrf_token);
+            }
             window.currentUser = data.logged_in ? data.user : null;
             this.updateNavAuthUI(data);
         } catch (e) {
@@ -92,21 +159,23 @@ const App = {
         if (errBox) errBox.style.display = 'none';
 
         try {
-            const res = await fetch('api/auth.php?action=login', {
+            const res = await this.apiFetch('api/auth.php?action=login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             });
             const data = await res.json();
 
             if (data.success) {
+                if (data.csrf_token) {
+                    this.setCsrfToken(data.csrf_token);
+                }
                 window.currentUser = data.user;
                 this.closeLoginModal();
                 this.showToast(`Selamat datang, ${data.user.full_name}!`);
                 setTimeout(() => window.location.reload(), 500);
             } else {
                 if (errBox) {
-                    errBox.textContent = data.message;
+                    errBox.textContent = data.message || 'Gagal masuk akun.';
                     errBox.style.display = 'block';
                 }
             }
@@ -122,7 +191,10 @@ const App = {
 
     async handleLogout() {
         try {
-            await fetch('api/auth.php?action=logout');
+            await this.apiFetch('api/auth.php?action=logout', {
+                method: 'POST',
+                body: JSON.stringify({})
+            });
             this.showToast('Berhasil keluar akun.');
             setTimeout(() => {
                 window.location.href = 'index.php?page=home';
@@ -152,9 +224,8 @@ const App = {
         if (errBox) errBox.style.display = 'none';
 
         try {
-            const res = await fetch('api/auth.php?action=update_profile', {
+            const res = await this.apiFetch('api/auth.php?action=update_profile', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: newUsername,
                     new_password: newPassword || null,
@@ -164,12 +235,12 @@ const App = {
             const data = await res.json();
 
             if (data.success) {
-                this.showToast('✓ Profil dan keamanan berhasil diperbarui!');
+                this.showToast('Profil dan keamanan berhasil diperbarui.');
                 this.closeProfileModal();
                 setTimeout(() => window.location.reload(), 600);
             } else {
                 if (errBox) {
-                    errBox.textContent = data.message;
+                    errBox.textContent = data.message || 'Gagal memperbarui profil.';
                     errBox.style.display = 'block';
                 }
             }
@@ -230,6 +301,23 @@ const App = {
         }, 3200);
     },
 
+    closeModalOverlay(modal) {
+        if (!modal) return;
+        const staticModalIds = [
+            'loginModal', 'profileModal', 'uploadModal',
+            'addMateriModal', 'editMateriModal', 'quizQuestionModal',
+            'createUserModal', 'editUserModal', 'textToolModal',
+            'newCanvasConfirmModal'
+        ];
+        if (modal.id === 'uploadModal' && window.PameranApp?.closeUploadModal) {
+            window.PameranApp.closeUploadModal();
+        } else if (modal.id && staticModalIds.includes(modal.id)) {
+            modal.style.display = 'none';
+        } else {
+            modal.remove();
+        }
+    },
+
     bindEvents() {
         // Quick demo login fill
         window.fillDemoLogin = (user, pass) => {
@@ -240,6 +328,29 @@ const App = {
                 p.value = pass;
             }
         };
+
+        if (this._eventsBound) return;
+        this._eventsBound = true;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            const drawer = document.getElementById('mobileNavDrawer');
+            if (drawer && drawer.classList.contains('open')) {
+                this.closeMobileNav();
+            }
+            document.querySelectorAll('.modal-overlay').forEach((overlay) => {
+                if (getComputedStyle(overlay).display !== 'none') {
+                    this.closeModalOverlay(overlay);
+                }
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target && target.classList && target.classList.contains('modal-overlay')) {
+                this.closeModalOverlay(target);
+            }
+        });
     },
 
     toggleMobileNav() {
@@ -252,7 +363,10 @@ const App = {
             this.closeMobileNav();
         } else {
             drawer.classList.add('open');
-            if (toggle) toggle.classList.add('active');
+            if (toggle) {
+                toggle.classList.add('active');
+                toggle.setAttribute('aria-expanded', 'true');
+            }
             if (overlay) overlay.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -263,13 +377,16 @@ const App = {
         const toggle = document.getElementById('mobileNavToggle');
         const overlay = document.getElementById('mobileNavOverlay');
         if (drawer) drawer.classList.remove('open');
-        if (toggle) toggle.classList.remove('active');
+        if (toggle) {
+            toggle.classList.remove('active');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
         if (overlay) overlay.classList.remove('active');
         document.body.style.overflow = '';
     },
 
     escapeHTML(str) {
-        return String(str).replace(/[&<>"']/g, m => ({
+        return String(str ?? '').replace(/[&<>"']/g, m => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
         }[m]));
     }

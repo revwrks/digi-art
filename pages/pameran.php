@@ -1,4 +1,5 @@
 <?php
+if (!defined('DIGIART_APP')) { http_response_code(403); exit; }
 $pageTitle = 'Galeri Pameran Karya Seni Siswa — Digi-Art';
 include __DIR__ . '/../includes/header.php';
 ?>

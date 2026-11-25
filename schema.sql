@@ -171,7 +171,7 @@ INSERT INTO users (username, password, full_name, role, kelas) VALUES
 INSERT INTO materi_sections (section_number, title, subtitle, display_mode, show_cards, content_json, source_note, is_active) VALUES
 (1, 'Pengertian Ilustrasi', 'Memahami dasar bahasa visual dalam pembelajaran', 'prose', 0, 
 '{"paragraphs":["Ilustrasi adalah gambar atau bentuk visual yang digunakan untuk memperjelas, menerangkan, atau menyampaikan pesan sehingga informasi lebih mudah dipahami. Dalam konteks pembelajaran, ilustrasi dapat membantu mengubah informasi yang abstrak atau verbal menjadi gambaran yang lebih konkret.","Menggambar ilustrasi merupakan kegiatan membuat karya visual dua dimensi untuk menyampaikan gagasan, cerita, suasana, informasi, atau penjelasan tertentu. Karena itu, ilustrasi tidak hanya mengejar keindahan, tetapi juga memperhatikan keterbacaan pesan."]}',
-'📌 Panduan FLS3N SMP/MTs/Sederajat 2025 menjelaskan ilustrasi sebagai media yang membuat sesuatu lebih mudah dipahami melalui gambaran konkret dan menekankan fungsi komunikasi, pendidikan, informasi, serta ekspresi.', 1),
+'Panduan FLS3N SMP/MTs/Sederajat 2025 menjelaskan ilustrasi sebagai media yang membuat sesuatu lebih mudah dipahami melalui gambaran konkret dan menekankan fungsi komunikasi, pendidikan, informasi, serta ekspresi.', 1),
 
 (2, 'Fungsi Ilustrasi', 'Peran penting gambar dalam memperkuat pemahaman', 'cards', 1,
 '{"items":[{"tag":"01","title":"Menjelaskan","desc":"Memperjelas konsep, proses, objek, atau peristiwa yang sulit dipahami hanya melalui teks."},{"tag":"02","title":"Menginformasikan","desc":"Menyampaikan informasi secara visual agar pembaca dapat menangkap pesan penting dengan cepat."},{"tag":"03","title":"Mendidik","desc":"Membantu proses belajar melalui contoh visual, diagram, gambar cerita, atau representasi suatu konsep."},{"tag":"04","title":"Menghibur & Menarik","desc":"Visual yang menarik dapat meningkatkan perhatian dan membuat materi lebih menyenangkan."},{"tag":"05","title":"Menyampaikan Cerita","desc":"Ilustrasi dapat menggambarkan tokoh, latar, kejadian, dan suasana sehingga sebuah cerita lebih hidup."},{"tag":"06","title":"Ekspresi & Kreativitas","desc":"Ilustrator dapat menyampaikan gagasan dan sudut pandang melalui pilihan bentuk, warna, gaya, dan komposisi."}]}',
@@ -179,19 +179,19 @@ INSERT INTO materi_sections (section_number, title, subtitle, display_mode, show
 
 (3, 'Jenis-Jenis Ilustrasi', 'Ragam bentuk dan gaya ilustrasi untuk berbagai kebutuhan', 'list', 0,
 '{"items":[{"title":"Ilustrasi ilmiah / edukatif","desc":"Menjelaskan objek atau konsep, misalnya struktur gunung berapi, organ tubuh, peta sederhana, atau proses siklus air."},{"title":"Gambar cerita / naratif","desc":"Menggambarkan rangkaian kejadian atau suasana dalam cerita atau buku bacaan."},{"title":"Komik","desc":"Cerita visual yang memadukan gambar, panel urut, tokoh karakter, dan balon dialog."},{"title":"Kartun","desc":"Gambar dengan bentuk yang disederhanakan atau dilebihkan untuk menyampaikan pesan secara ringan dan humoris."},{"title":"Karikatur","desc":"Penggambaran tokoh atau objek dengan ciri tertentu yang sengaja ditonjolkan atau didistorsi."},{"title":"Ilustrasi dekoratif","desc":"Mengutamakan pengolahan bentuk dan ornamen untuk memperindah tampilan permukaan benda."}]}',
-'📚 e-Modul Seni Budaya Kemdikbud & Riset Jurnal Seni Rupa GARUDA.', 1),
+'e-Modul Seni Budaya Kemdikbud & Riset Jurnal Seni Rupa GARUDA.', 1),
 
 (4, 'Objek dan Unsur Visual', 'Elemen-elemen dasar penyusun karya ilustrasi', 'prose', 0,
 '{"paragraphs":["Objek ilustrasi dapat berupa manusia, hewan, tumbuhan, benda, bangunan, lingkungan, maupun simbol grafis.","Saat berkarya, perhatikan unsur-unsur dasar: titik, garis, bidang, bentuk, warna, tekstur, gelap-terang, komposisi, proporsi, dan perspektif. Pemilihan unsur harus membantu pesan utama terlihat jelas dan memikat pembaca."]}',
 'Keseimbangan dan fokus pesan menjadi kunci utama keberhasilan ilustrasi edukatif.', 1),
 
 (5, 'Menghubungkan Ilustrasi dengan Mapel Lain', 'Aplikasi lintas mata pelajaran', 'cards', 1,
-'{"items":[{"tag":"IPS 🌋","title":"Ilmu Pengetahuan Sosial","desc":"Ilustrasikan gunung berapi, peta tematik, bentang alam geografi, aktivitas pasar ekonomi, atau peristiwa sejarah kemerdekaan."},{"tag":"IPA 🧬","title":"Ilmu Pengetahuan Alam","desc":"Ilustrasikan sistem organ manusia, rantai makanan ekosistem, siklus air presipitasi, tata surya, atau struktur sel biologi."},{"tag":"B. INDO 📖","title":"Bahasa Indonesia","desc":"Ilustrasikan adegan penting dari cerita fabel, cerpen, perwatakan tokoh, latar suasana, atau urutan alur peristiwa."}]}',
+'{"items":[{"tag":"IPS","title":"Ilmu Pengetahuan Sosial","desc":"Ilustrasikan gunung berapi, peta tematik, bentang alam geografi, aktivitas pasar ekonomi, atau peristiwa sejarah kemerdekaan."},{"tag":"IPA","title":"Ilmu Pengetahuan Alam","desc":"Ilustrasikan sistem organ manusia, rantai makanan ekosistem, siklus air presipitasi, tata surya, atau struktur sel biologi."},{"tag":"B. INDO","title":"Bahasa Indonesia","desc":"Ilustrasikan adegan penting dari cerita fabel, cerpen, perwatakan tokoh, latar suasana, atau urutan alur peristiwa."}]}',
 'Integrasi STEAM (Science, Technology, Engineering, Arts, Math) mendorong pemikiran holistik siswa.', 1),
 
 (6, 'Langkah-Langkah Berkarya', 'Proses terstruktur dari ide hingga karya akhir', 'steps', 1,
 '{"items":[{"step":1,"title":"Tentukan Topik & Pesan","desc":"Identifikasi materi pelajaran yang ingin dijelaskan serta audiens target."},{"step":2,"title":"Kumpulkan Referensi","desc":"Cari inspirasi visual, foto nyata, dan skema di modul atau search engine gambar."},{"step":3,"title":"Thumbnail Sketch","desc":"Buat beberapa sketsa kecil berukuran kartu untuk mencari komposisi terbaik."},{"step":4,"title":"Pilih Sudut Pandang","desc":"Tentukan perspektif, fokus objek (center of interest), dan skala proporsi."},{"step":5,"title":"Perjelas Garis & Bentuk","desc":"Tebalkan garis luar (outline/line-art) dan rapikan detail bentuk objek."},{"step":6,"title":"Pewarnaan & Gelap Terang","desc":"Pilih palet warna yang serasi serta tambahkan arsiran/bayangan untuk dimensi."},{"step":7,"title":"Keterangan & Label","desc":"Sertakan judul, nama bagian, atau keterangan jika ilustrasi bersifat edukatif."},{"step":8,"title":"Evaluasi & Refleksi","desc":"Periksa apakah gambar sudah komunikatif, mudah dipahami, dan estetik."}]}',
-'🎯 Siswa diharapkan mampu membuat karya ilustrasi yang komunikatif, kreatif, dan berdaya guna.', 1);
+'Siswa diharapkan mampu membuat karya ilustrasi yang komunikatif, kreatif, dan berdaya guna.', 1);
 
 -- 3. Pertanyaan Kuis Format Kahoot
 INSERT INTO quiz_questions (order_num, question, option_a, option_b, option_c, option_d, correct_index, time_limit, points) VALUES
@@ -208,8 +208,8 @@ INSERT INTO quiz_questions (order_num, question, option_a, option_b, option_c, o
 
 -- 4. Sampel Awal Pameran Karya Siswa (Approved)
 INSERT INTO pameran_karya (user_id, title, creator_name, kelas, description, image_path, status, likes_count, approved_at) VALUES
-(3, 'Gunung Merapi Meletus (Materi IPS)', 'Siti Aisyah', 'VIII A', 'Ilustrasi mitigasi bencana erupsi gunung berapi untuk mata pelajaran IPS Geografi. Dibuat dengan teknik digital brush.', 'assets/img/sample-volcano.svg', 'approved', 14, NOW()),
-(4, 'Siklus Hidrologi & Air Bersih (IPA)', 'Budi Pratama', 'VIII A', 'Diagram siklus air presipitasi, evaporasi, dan kondensasi dengan skema panah jelas.', 'assets/img/sample-watercycle.svg', 'approved', 21, NOW()),
+(3, 'Gunung Merapi Meletus (Materi IPS)', 'Siti Aisyah', 'VIII A', 'Ilustrasi mitigasi bencana erupsi gunung berapi untuk mata pelajaran IPS Geografi. Dibuat dengan teknik digital brush.', 'assets/img/sample-volcano-art.png', 'approved', 14, NOW()),
+(4, 'Siklus Hidrologi & Air Bersih (IPA)', 'Budi Pratama', 'VIII A', 'Diagram siklus air presipitasi, evaporasi, dan kondensasi dengan skema panah jelas.', 'assets/img/sample-watercycle-art.png', 'approved', 21, NOW()),
 (5, 'Fabel Kancil & Buaya (B. Indonesia)', 'Ratna Dewi', 'VIII B', 'Ilustrasi adegan cerita fabel nusantara dengan ekspresi tokoh ceria dan lingkungan rawa.', 'assets/img/sample-story.svg', 'approved', 18, NOW());
 
 -- 5. Pengaturan Tampilan & Dekorasi Beranda
@@ -217,8 +217,8 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
 ('home_kicker', 'PEMBELAJARAN SENI RUPA • KELAS VIII'),
 ('home_title', 'Belajar Seni Visual di'),
 ('home_highlight', 'Digi-Art'),
-('home_description', 'Media interaktif untuk menguasai Menggambar Ilustrasi untuk Mata Pelajaran Lain. Jelajahi materi berformat fleksibel, temukan referensi gambar nyata, berkarya di studio digital ibis paint, dan ikuti kuis seru bergaya Kahoot!'),
-('home_badge', '✨ Kurikulum Seni Rupa SMP • Kelas VIII'),
+('home_description', 'Media interaktif untuk menguasai Menggambar Ilustrasi untuk Mata Pelajaran Lain. Jelajahi materi adaptif, temukan referensi gambar nyata, berkarya di studio kanvas digital, dan uji pemahaman lewat kuis interaktif.'),
+('home_badge', 'Kurikulum Seni Rupa SMP • Kelas VIII'),
 ('home_theme', 'blue'),
 ('home_art_mode', 'svg_default'),
 ('home_custom_art', ''),

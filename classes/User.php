@@ -47,8 +47,8 @@ class User {
             return ['success' => false, 'message' => 'Nama lengkap, username, dan password wajib diisi.'];
         }
 
-        if (strlen($username) < 3) {
-            return ['success' => false, 'message' => 'Username minimal 3 karakter tanpa spasi.'];
+        if (preg_match('/^[a-z0-9._-]{3,50}$/', $username) !== 1) {
+            return ['success' => false, 'message' => 'Username harus 3–50 karakter (huruf kecil, angka, titik, underscore, atau strip).'];
         }
 
         if (strlen($password) < 4) {
@@ -229,8 +229,8 @@ class User {
             if (empty($username)) {
                 return ['success' => false, 'message' => 'Username tidak boleh kosong.'];
             }
-            if (strlen($username) < 3) {
-                return ['success' => false, 'message' => 'Username minimal 3 karakter.'];
+            if (preg_match('/^[a-z0-9._-]{3,50}$/', $username) !== 1) {
+                return ['success' => false, 'message' => 'Username harus 3–50 karakter (huruf kecil, angka, titik, underscore, atau strip).'];
             }
             if ($username !== $target['username']) {
                 $dup = $this->db->fetch("SELECT id FROM users WHERE username = :u AND id != :id LIMIT 1", [
@@ -292,10 +292,13 @@ class User {
             $currentUser['role']
         );
 
+        $safeUser = array_merge($target, $updateFields);
+        unset($safeUser['password']);
+
         return [
             'success' => true,
             'message' => 'Akun pengguna berhasil diperbarui!',
-            'user'    => array_merge($target, $updateFields)
+            'user'    => $safeUser
         ];
     }
 
@@ -320,6 +323,9 @@ class User {
         $newUsername = strtolower(trim($newUsername));
         if (empty($newUsername)) {
             return ['success' => false, 'message' => 'Username baru tidak boleh kosong.'];
+        }
+        if (preg_match('/^[a-z0-9._-]{3,50}$/', $newUsername) !== 1) {
+            return ['success' => false, 'message' => 'Username harus 3–50 karakter (huruf kecil, angka, titik, underscore, atau strip).'];
         }
 
         $user = $this->db->fetch("SELECT * FROM users WHERE id = :id", [':id' => $userId]);

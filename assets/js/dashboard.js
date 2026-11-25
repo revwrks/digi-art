@@ -37,6 +37,53 @@ const DashboardApp = {
 
     userViewMode: (window.innerWidth <= 768) ? 'cards' : 'table',
 
+    getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    },
+
+    async apiPost(url, payload) {
+        const body = JSON.stringify(payload);
+        if (window.App && typeof window.App.apiFetch === 'function') {
+            return window.App.apiFetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body
+            });
+        }
+        const headers = { 'Content-Type': 'application/json' };
+        const csrf = this.getCsrfToken();
+        if (csrf) {
+            headers['X-CSRF-Token'] = csrf;
+        }
+        return fetch(url, {
+            method: 'POST',
+            headers,
+            body
+        });
+    },
+
+    safeUrl(url, fallback = '') {
+        const raw = String(url || '').trim();
+        if (!raw) return fallback;
+        if (window.App && typeof window.App.safeUrl === 'function') {
+            const res = window.App.safeUrl(raw);
+            if (!res || res === '#') return fallback;
+            return res;
+        }
+        if (/[\x00-\x1F\x7F]/.test(raw) || raw.includes('\\') || raw.includes('..')) {
+            return fallback;
+        }
+        if (raw.startsWith('assets/') || raw.startsWith('uploads/')) {
+            if (raw.includes('//') || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) return fallback;
+            return raw;
+        }
+        try {
+            const parsed = new URL(raw, window.location.origin);
+            if (parsed.protocol === 'https:') return parsed.href;
+        } catch (e) {}
+        return fallback;
+    },
+
     init(user = null) {
         this.currentUser = user || window.currentUser;
         this.bindTabs();
@@ -173,14 +220,17 @@ const DashboardApp = {
         tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center">Memuat antrean karya…</td></tr>';
 
         try {
-            const url = filterStatus ? `api/pameran.php?action=get_all_teacher&status=${filterStatus}` : 'api/pameran.php?action=get_all_teacher';
+            const url = filterStatus ? `api/pameran.php?action=get_all_teacher&status=${encodeURIComponent(filterStatus)}` : 'api/pameran.php?action=get_all_teacher';
             const res = await fetch(url);
             const data = await res.json();
+            if (!data.success && data.message) {
+                throw new Error(data.message);
+            }
             this.pameranWorks = data.works || [];
             this.pameranPage = 1;
             this.renderPameranPage();
         } catch (err) {
-            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#e74c3c">Gagal memuat karya: ${err.message}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#e74c3c">Gagal memuat karya: ${this.escapeHTML(err.message)}</td></tr>`;
         }
     },
 
@@ -219,40 +269,42 @@ const DashboardApp = {
         const pageItems = this.pameranWorks.slice(startIndex, endIndex);
 
         tableBody.innerHTML = pageItems.map(w => {
+            const workId = Number(w.id) || 0;
+            const safeImg = this.safeUrl(w.image_path, 'assets/img/sample-volcano.svg');
             let statusBadge = '';
             if (w.status === 'pending') {
-                statusBadge = '<span class="status-badge pending">⏳ Menunggu Persetujuan</span>';
+                statusBadge = '<span class="status-badge pending">Menunggu Persetujuan</span>';
             } else if (w.status === 'approved') {
-                statusBadge = `<span class="status-badge approved">✓ Disetujui</span><br><small style="color:var(--muted);font-size:10px">Kurator: ${this.escapeHTML(w.curator_name || 'Guru')}</small>`;
+                statusBadge = `<span class="status-badge approved">Disetujui</span><br><small style="color:var(--muted);font-size:10px">Kurator: ${this.escapeHTML(w.curator_name || 'Guru')}</small>`;
             } else {
-                statusBadge = '<span class="status-badge rejected">✗ Ditolak</span>';
+                statusBadge = '<span class="status-badge rejected">Ditolak</span>';
             }
 
             return `
                 <tr>
                     <td>
-                        <img src="${w.image_path}" alt="${this.escapeHTML(w.title)}" class="dash-thumb" onerror="this.src='assets/img/sample-volcano.svg'">
+                        <img src="${this.escapeHTML(safeImg)}" alt="${this.escapeHTML(w.title || '')}" class="dash-thumb" onerror="this.src='assets/img/sample-volcano.svg'">
                     </td>
                     <td>
-                        <strong>${this.escapeHTML(w.title)}</strong><br>
+                        <strong>${this.escapeHTML(w.title || '')}</strong><br>
                         <small style="color:var(--muted)">${this.escapeHTML(w.description || '—')}</small>
                     </td>
                     <td>
-                        <strong>${this.escapeHTML(w.creator_name)}</strong><br>
+                        <strong>${this.escapeHTML(w.creator_name || '')}</strong><br>
                         <small>${this.escapeHTML(w.kelas || 'VIII')}</small>
                     </td>
                     <td>${statusBadge}</td>
-                    <td><small>${this.formatDate(w.created_at)}</small></td>
+                    <td><small>${this.escapeHTML(this.formatDate(w.created_at))}</small></td>
                     <td>
                         <div class="dash-action-btns">
                             ${w.status === 'pending' ? `
-                                <button class="btn-dash approve" onclick="DashboardApp.approveWork(${w.id})">✓ Setujui</button>
-                                <button class="btn-dash reject" onclick="DashboardApp.rejectWork(${w.id})">✗ Tolak</button>
+                                <button class="btn-dash approve" onclick="DashboardApp.approveWork(${workId})">Setujui</button>
+                                <button class="btn-dash reject" onclick="DashboardApp.rejectWork(${workId})">Tolak</button>
                             ` : ''}
                             ${w.status === 'rejected' ? `
-                                <button class="btn-dash approve" onclick="DashboardApp.approveWork(${w.id})">✓ Pulihkan & Setujui</button>
+                                <button class="btn-dash approve" onclick="DashboardApp.approveWork(${workId})">Pulihkan &amp; Setujui</button>
                             ` : ''}
-                            <button class="btn-dash delete" onclick="DashboardApp.deleteWork(${w.id})">🗑 Hapus</button>
+                            <button class="btn-dash delete" onclick="DashboardApp.deleteWork(${workId})">Hapus</button>
                         </div>
                     </td>
                 </tr>
@@ -273,18 +325,14 @@ const DashboardApp = {
 
     async approveWork(id) {
         try {
-            const res = await fetch('api/pameran.php?action=approve', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            });
+            const res = await this.apiPost('api/pameran.php?action=approve', { id });
             const data = await res.json();
             if (data.success) {
-                window.showToast?.('✓ Karya disetujui! Anda tercatat sebagai kurator resmi karya.');
+                window.showToast?.('Karya disetujui. Anda tercatat sebagai kurator resmi karya.');
                 this.loadPameranApprovals();
                 this.loadStats();
             } else {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Gagal menyetujui karya.');
             }
         } catch (e) {
             window.showToast?.('Gagal menyetujui karya.');
@@ -293,15 +341,13 @@ const DashboardApp = {
 
     async rejectWork(id) {
         try {
-            const res = await fetch('api/pameran.php?action=reject', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            });
+            const res = await this.apiPost('api/pameran.php?action=reject', { id });
             const data = await res.json();
             if (data.success) {
                 window.showToast?.('Karya ditolak.');
                 this.loadPameranApprovals();
+            } else {
+                window.showToast?.(data.message || 'Gagal menolak karya.');
             }
         } catch (e) {
             window.showToast?.('Gagal menolak karya.');
@@ -311,16 +357,14 @@ const DashboardApp = {
     async deleteWork(id) {
         if (!confirm('Apakah Anda yakin ingin menghapus karya ini secara permanen dari pameran?')) return;
         try {
-            const res = await fetch('api/pameran.php?action=delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            });
+            const res = await this.apiPost('api/pameran.php?action=delete', { id });
             const data = await res.json();
             if (data.success) {
                 window.showToast?.('Karya berhasil dihapus.');
                 this.loadPameranApprovals();
                 this.loadStats();
+            } else {
+                window.showToast?.(data.message || 'Gagal menghapus karya.');
             }
         } catch (e) {
             window.showToast?.('Gagal menghapus karya.');
@@ -355,19 +399,24 @@ const DashboardApp = {
                 container.innerHTML = `
                     <div style="text-align:center;padding:40px;background:#f8fafc;border-radius:var(--radius-md);border:1px dashed var(--line)">
                         <p style="color:var(--muted)">Belum ada materi pembelajaran yang dibuat.</p>
-                        <button class="btn small" onclick="DashboardApp.openAddMateriModal()">＋ Buat Materi Pertama</button>
+                        <button class="btn small" onclick="DashboardApp.openAddMateriModal()">Buat Materi Pertama</button>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = this.materiList.map(sec => `
-                <div class="materi-manage-card" id="materiItem_${sec.id}">
+            container.innerHTML = this.materiList.map(sec => {
+                const secId = Number(sec.id) || 0;
+                const secNum = Number(sec.section_number) || 0;
+                const safeSecImg = this.safeUrl(sec.image_url, '');
+
+                return `
+                <div class="materi-manage-card" id="materiItem_${secId}">
                     <div class="materi-manage-header">
                         <div style="display:flex;align-items:center;gap:12px">
-                            <span class="sec-badge">No. ${sec.section_number}</span>
+                            <span class="sec-badge">No. ${secNum}</span>
                             <div>
-                                <h4 style="margin:0">${this.escapeHTML(sec.title)}</h4>
+                                <h4 style="margin:0">${this.escapeHTML(sec.title || '')}</h4>
                                 <small style="color:var(--muted)">${this.escapeHTML(sec.subtitle || '—')}</small>
                             </div>
                         </div>
@@ -375,7 +424,7 @@ const DashboardApp = {
                             <!-- Toggle Card On/Off sesuai permintaan user -->
                             <label class="switch-toggle" title="Aktifkan atau Hilangkan Kartu pada nomor materi ini">
                                 <input type="checkbox" ${sec.show_cards == 1 ? 'checked' : ''} 
-                                       onchange="DashboardApp.toggleCard(${sec.id}, this.checked)">
+                                       onchange="DashboardApp.toggleCard(${secId}, this.checked)">
                                 <span class="slider"></span>
                             </label>
                             <span class="toggle-label">${sec.show_cards == 1 ? 'Tampilan Card AKTIF' : 'Card NONAKTIF'}</span>
@@ -386,7 +435,7 @@ const DashboardApp = {
                         <!-- Pratinjau Gambar Banner Materi jika ada -->
                         ${sec.image_url ? `
                             <div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;background:#f8fafc;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--line)">
-                                <img src="${this.escapeHTML(sec.image_url)}" alt="Banner Materi" style="width:60px;height:45px;object-fit:cover;border-radius:4px" onerror="this.style.display='none'">
+                                ${safeSecImg ? `<img src="${this.escapeHTML(safeSecImg)}" alt="Banner Materi" style="width:60px;height:45px;object-fit:cover;border-radius:4px" onerror="this.style.display='none'">` : ''}
                                 <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis">
                                     <strong>Gambar Materi:</strong> <code>${this.escapeHTML(sec.image_url)}</code>
                                 </div>
@@ -396,7 +445,7 @@ const DashboardApp = {
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Model Template Tampilan:</label>
-                                <select class="field-select" id="mode_${sec.id}" onchange="DashboardApp.changeDisplayMode(${sec.id}, this.value)">
+                                <select class="field-select" id="mode_${secId}" onchange="DashboardApp.changeDisplayMode(${secId}, this.value)">
                                     <option value="cards" ${sec.display_mode === 'cards' ? 'selected' : ''}>Grid Kartu (Cards)</option>
                                     <option value="list" ${sec.display_mode === 'list' ? 'selected' : ''}>Daftar Terstruktur (List)</option>
                                     <option value="prose" ${sec.display_mode === 'prose' ? 'selected' : ''}>Paragraf Mengalir (Prose)</option>
@@ -405,39 +454,40 @@ const DashboardApp = {
                             </div>
                             <div class="form-group">
                                 <label>Judul Bagian:</label>
-                                <input type="text" class="field-input" id="title_${sec.id}" value="${this.escapeHTML(sec.title)}">
+                                <input type="text" class="field-input" id="title_${secId}" value="${this.escapeHTML(sec.title || '')}">
                             </div>
                         </div>
 
                         <div class="form-group" style="margin-top:10px">
                             <label>URL Gambar Ilustrasi Materi (Opsional):</label>
-                            <input type="text" class="field-input" id="img_${sec.id}" value="${this.escapeHTML(sec.image_url || '')}" placeholder="Contoh: assets/img/sample-volcano.svg">
+                            <input type="text" class="field-input" id="img_${secId}" value="${this.escapeHTML(sec.image_url || '')}" placeholder="Contoh: assets/img/sample-volcano.svg">
                         </div>
 
                         <div class="form-group" style="margin-top:10px">
                             <label>Catatan Sumber / Rujukan Belajar:</label>
-                            <input type="text" class="field-input" id="source_${sec.id}" value="${this.escapeHTML(sec.source_note || '')}">
+                            <input type="text" class="field-input" id="source_${secId}" value="${this.escapeHTML(sec.source_note || '')}">
                         </div>
 
                         <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-                            <button class="btn-dash delete" style="padding:6px 12px" onclick="DashboardApp.deleteMateri(${sec.id}, '${this.escapeHTML(sec.title)}', ${sec.section_number})">
-                                🗑️ Hapus Nomor Ini
+                            <button class="btn-dash delete" style="padding:6px 12px" onclick="DashboardApp.deleteMateri(${secId})">
+                                Hapus Nomor Ini
                             </button>
                             <div style="display:flex;gap:8px">
-                                <button class="btn secondary small" onclick="DashboardApp.openEditMateriModal(${sec.id})">
-                                    ✏️ Edit Isi Lengkap
+                                <button class="btn secondary small" onclick="DashboardApp.openEditMateriModal(${secId})">
+                                    Edit Isi Lengkap
                                 </button>
-                                <button class="btn small" onclick="DashboardApp.saveMateri(${sec.id})">
-                                    💾 Simpan Perubahan
+                                <button class="btn small" onclick="DashboardApp.saveMateri(${secId})">
+                                    Simpan Perubahan
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
         } catch (err) {
-            container.innerHTML = `<p style="color:#e74c3c">Gagal memuat materi: ${err.message}</p>`;
+            container.innerHTML = `<p style="color:#e74c3c">Gagal memuat materi: ${this.escapeHTML(err.message)}</p>`;
         }
     },
 
@@ -482,26 +532,22 @@ const DashboardApp = {
         if (btn) btn.disabled = true;
 
         try {
-            const res = await fetch('api/materi.php?action=add_section', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    section_number,
-                    title,
-                    subtitle,
-                    display_mode,
-                    image_url,
-                    source_note,
-                    content: { items }
-                })
+            const res = await this.apiPost('api/materi.php?action=add_section', {
+                section_number,
+                title,
+                subtitle,
+                display_mode,
+                image_url,
+                source_note,
+                content: { items }
             });
             const data = await res.json();
             if (data.success) {
-                window.showToast?.(`✓ ${data.message}`);
+                window.showToast?.(data.message || 'Materi baru berhasil ditambahkan.');
                 this.closeAddMateriModal();
                 this.loadMateriManagement();
             } else {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Gagal menambahkan materi.');
             }
         } catch (err) {
             window.showToast?.('Gagal menambahkan materi: ' + err.message);
@@ -568,27 +614,23 @@ const DashboardApp = {
         if (btn) btn.disabled = true;
 
         try {
-            const res = await fetch('api/materi.php?action=update_section', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id,
-                    section_number,
-                    title,
-                    subtitle,
-                    display_mode,
-                    image_url,
-                    source_note,
-                    content: { items }
-                })
+            const res = await this.apiPost('api/materi.php?action=update_section', {
+                id,
+                section_number,
+                title,
+                subtitle,
+                display_mode,
+                image_url,
+                source_note,
+                content: { items }
             });
             const data = await res.json();
             if (data.success) {
-                window.showToast?.('✓ Materi berhasil diperbarui!');
+                window.showToast?.('Materi berhasil diperbarui.');
                 this.closeEditMateriModal();
                 this.loadMateriManagement();
             } else {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Gagal menyimpan materi.');
             }
         } catch (err) {
             window.showToast?.('Gagal menyimpan materi: ' + err.message);
@@ -605,21 +647,20 @@ const DashboardApp = {
         this.deleteMateri(id, title, num);
     },
 
-    async deleteMateri(id, title, num) {
-        if (!confirm(`Apakah Anda yakin ingin menghapus nomor materi ${num}: "${title}"?`)) return;
+    async deleteMateri(id, title = null, num = null) {
+        const sec = this.materiList.find(s => Number(s.id) === Number(id));
+        const secTitle = title !== null ? title : (sec?.title || '');
+        const secNum = num !== null ? num : (sec?.section_number || id);
+        if (!confirm(`Apakah Anda yakin ingin menghapus nomor materi ${secNum}: "${secTitle}"?`)) return;
 
         try {
-            const res = await fetch('api/materi.php?action=delete_section', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            });
+            const res = await this.apiPost('api/materi.php?action=delete_section', { id });
             const data = await res.json();
             if (data.success) {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Materi berhasil dihapus.');
                 this.loadMateriManagement();
             } else {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Gagal menghapus materi.');
             }
         } catch (e) {
             window.showToast?.('Gagal menghapus materi.');
@@ -644,15 +685,13 @@ const DashboardApp = {
 
     async toggleCard(id, isChecked) {
         try {
-            const res = await fetch('api/materi.php?action=toggle_cards', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, show_cards: isChecked ? 1 : 0 })
-            });
+            const res = await this.apiPost('api/materi.php?action=toggle_cards', { id, show_cards: isChecked ? 1 : 0 });
             const data = await res.json();
             if (data.success) {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Pengaturan kartu diperbarui.');
                 this.loadMateriManagement();
+            } else {
+                window.showToast?.(data.message || 'Gagal mengubah pengaturan kartu.');
             }
         } catch (e) {
             window.showToast?.('Gagal mengubah pengaturan kartu.');
@@ -661,14 +700,12 @@ const DashboardApp = {
 
     async changeDisplayMode(id, newMode) {
         try {
-            const res = await fetch('api/materi.php?action=update_section', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, display_mode: newMode })
-            });
+            const res = await this.apiPost('api/materi.php?action=update_section', { id, display_mode: newMode });
             const data = await res.json();
             if (data.success) {
                 window.showToast?.(`Model tampilan diubah ke: ${newMode}`);
+            } else {
+                window.showToast?.(data.message || 'Gagal mengubah model tampilan.');
             }
         } catch (e) {
             window.showToast?.('Gagal mengubah model tampilan.');
@@ -682,17 +719,13 @@ const DashboardApp = {
         const image_url = document.getElementById(`img_${id}`)?.value.trim();
 
         try {
-            const res = await fetch('api/materi.php?action=update_section', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, title, source_note, display_mode, image_url })
-            });
+            const res = await this.apiPost('api/materi.php?action=update_section', { id, title, source_note, display_mode, image_url });
             const data = await res.json();
             if (data.success) {
-                window.showToast?.('✓ Materi berhasil disimpan!');
+                window.showToast?.('Materi berhasil disimpan.');
                 this.loadMateriManagement();
             } else {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Gagal menyimpan materi.');
             }
         } catch (e) {
             window.showToast?.('Gagal menyimpan materi.');
@@ -722,11 +755,7 @@ const DashboardApp = {
         }
 
         try {
-            const res = await fetch('api/materi.php?action=update_header', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bab, title, description })
-            });
+            const res = await this.apiPost('api/materi.php?action=update_header', { bab, title, description });
             const data = await res.json();
 
             if (data.success) {
@@ -759,6 +788,9 @@ const DashboardApp = {
         try {
             const res = await fetch('api/users.php?action=list_users');
             const data = await res.json();
+            if (!data.success && data.message) {
+                throw new Error(data.message);
+            }
             this.usersList = data.users || [];
             if (data.current_role) {
                 this.currentUser = {
@@ -769,7 +801,7 @@ const DashboardApp = {
             }
             this.applyUsersFilterAndRender();
         } catch (err) {
-            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#e74c3c">Gagal memuat data pengguna: ${err.message}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#e74c3c">Gagal memuat data pengguna: ${this.escapeHTML(err.message)}</td></tr>`;
         }
     },
 
@@ -847,29 +879,31 @@ const DashboardApp = {
         // Render Tampilan 1: Tabel Desktop
         tableBody.innerHTML = pageItems.map((u, idx) => {
             const rowNumber = startIndex + idx + 1;
-            const isSelf = Boolean(u.is_self || (callerId && Number(u.id) === callerId));
+            const uid = Number(u.id) || 0;
+            const roleSlug = ['admin', 'guru', 'murid'].includes(u.role) ? u.role : 'murid';
+            const isSelf = Boolean(u.is_self || (callerId && uid === callerId));
 
             // Hak Akses Edit:
             // 1. Akun siswa (murid) SELALU bisa diedit di dashboard (baik oleh Guru maupun Admin)
             // 2. Akun sendiri SELALU bisa diedit oleh pemiliknya
             // 3. Admin bisa mengedit SEMUA akun (admin, guru, murid)
             // 4. Fallback jika flag can_edit dari server bernilai true
-            const canEdit = isCallerAdmin || (u.role === 'murid') || isSelf || Boolean(u.can_edit);
+            const canEdit = isCallerAdmin || (roleSlug === 'murid') || isSelf || Boolean(u.can_edit);
             // Hak Akses Hapus: Admin bisa hapus selain diri sendiri; Guru bisa hapus murid selain diri sendiri
-            const canDelete = !isSelf && (isCallerAdmin || (isCallerGuru && u.role === 'murid') || Boolean(u.can_delete));
+            const canDelete = !isSelf && (isCallerAdmin || (isCallerGuru && roleSlug === 'murid') || Boolean(u.can_delete));
 
             let actions = [];
             if (canEdit) {
                 actions.push(`
-                    <button type="button" class="btn-dash edit" onclick="DashboardApp.openEditUserModal(${u.id})" title="Edit Nama, Username, Kelas, atau Password">
-                        ✏️ Edit
+                    <button type="button" class="btn-dash edit" onclick="DashboardApp.openEditUserModal(${uid})" title="Edit Nama, Username, Kelas, atau Password">
+                        Edit
                     </button>
                 `);
             }
             if (canDelete) {
                 actions.push(`
-                    <button type="button" class="btn-dash delete" onclick="DashboardApp.deleteUser(${u.id}, '${this.escapeHTML(u.full_name)}', '${u.role}')" title="Hapus Akun">
-                        🗑 Hapus
+                    <button type="button" class="btn-dash delete" onclick="DashboardApp.deleteUser(${uid})" title="Hapus Akun">
+                        Hapus
                     </button>
                 `);
             }
@@ -879,10 +913,10 @@ const DashboardApp = {
                 actionBtn = `<div style="display:flex;gap:6px;justify-content:center">${actions.join('')}</div>`;
             } else if (isSelf) {
                 actionBtn = '<span style="color:var(--muted);font-size:12px;font-weight:700">(Akun Anda)</span>';
-            } else if (u.role === 'admin') {
-                actionBtn = '<span class="status-badge" style="background:#f1f5f9;color:#64748b;font-size:11px" title="Guru tidak dapat mengubah Administrator">🔒 Admin</span>';
-            } else if (u.role === 'guru') {
-                actionBtn = '<span class="status-badge" style="background:#f1f5f9;color:#64748b;font-size:11px" title="Guru tidak dapat mengubah sesama Guru">🔒 Guru</span>';
+            } else if (roleSlug === 'admin') {
+                actionBtn = '<span class="status-badge" style="background:#f1f5f9;color:#64748b;font-size:11px" title="Guru tidak dapat mengubah Administrator">Admin</span>';
+            } else if (roleSlug === 'guru') {
+                actionBtn = '<span class="status-badge" style="background:#f1f5f9;color:#64748b;font-size:11px" title="Guru tidak dapat mengubah sesama Guru">Guru</span>';
             } else {
                 actionBtn = '<span style="color:var(--muted);font-size:11px">—</span>';
             }
@@ -890,9 +924,9 @@ const DashboardApp = {
             return `
                 <tr>
                     <td>${rowNumber}</td>
-                    <td><strong>${this.escapeHTML(u.full_name)}</strong></td>
-                    <td><code>${this.escapeHTML(u.username)}</code></td>
-                    <td><span class="role-badge ${u.role}">${u.role.toUpperCase()}</span></td>
+                    <td><strong>${this.escapeHTML(u.full_name || '')}</strong></td>
+                    <td><code>${this.escapeHTML(u.username || '')}</code></td>
+                    <td><span class="role-badge ${roleSlug}">${this.escapeHTML(roleSlug.toUpperCase())}</span></td>
                     <td><span class="kelas-badge">${this.escapeHTML(u.kelas || '—')}</span></td>
                     <td style="text-align:center">${actionBtn}</td>
                 </tr>
@@ -902,23 +936,25 @@ const DashboardApp = {
         // Render Tampilan 2: Kartu Pengguna Mobile (Responsive Cards)
         if (cardsContainer) {
             cardsContainer.innerHTML = pageItems.map((u) => {
-                const initial = (u.full_name || 'U').trim().charAt(0).toUpperCase();
-                const isSelf = Boolean(u.is_self || (callerId && Number(u.id) === callerId));
-                const canEdit = isCallerAdmin || (u.role === 'murid') || isSelf || Boolean(u.can_edit);
-                const canDelete = !isSelf && (isCallerAdmin || (isCallerGuru && u.role === 'murid') || Boolean(u.can_delete));
+                const uid = Number(u.id) || 0;
+                const roleSlug = ['admin', 'guru', 'murid'].includes(u.role) ? u.role : 'murid';
+                const initial = this.escapeHTML((u.full_name || 'U').trim().charAt(0).toUpperCase());
+                const isSelf = Boolean(u.is_self || (callerId && uid === callerId));
+                const canEdit = isCallerAdmin || (roleSlug === 'murid') || isSelf || Boolean(u.can_edit);
+                const canDelete = !isSelf && (isCallerAdmin || (isCallerGuru && roleSlug === 'murid') || Boolean(u.can_delete));
 
                 let cardActions = [];
                 if (canEdit) {
                     cardActions.push(`
-                        <button type="button" class="btn-dash edit" onclick="DashboardApp.openEditUserModal(${u.id})">
-                            ✏️ Edit Akun
+                        <button type="button" class="btn-dash edit" onclick="DashboardApp.openEditUserModal(${uid})">
+                            Edit Akun
                         </button>
                     `);
                 }
                 if (canDelete) {
                     cardActions.push(`
-                        <button type="button" class="btn-dash delete" onclick="DashboardApp.deleteUser(${u.id}, '${this.escapeHTML(u.full_name)}', '${u.role}')">
-                            🗑 Hapus
+                        <button type="button" class="btn-dash delete" onclick="DashboardApp.deleteUser(${uid})">
+                            Hapus
                         </button>
                     `);
                 }
@@ -927,22 +963,22 @@ const DashboardApp = {
                 if (cardActions.length > 0) {
                     cardActionBtn = cardActions.join('');
                 } else if (isSelf) {
-                    cardActionBtn = '<span style="color:var(--muted);font-size:12px;font-weight:700">🔒 Akun Anda</span>';
+                    cardActionBtn = '<span style="color:var(--muted);font-size:12px;font-weight:700">Akun Anda</span>';
                 } else {
-                    cardActionBtn = `<span class="status-badge" style="background:#f1f5f9;color:#64748b;font-size:11px">🔒 ${u.role.toUpperCase()}</span>`;
+                    cardActionBtn = `<span class="status-badge" style="background:#f1f5f9;color:#64748b;font-size:11px">${this.escapeHTML(roleSlug.toUpperCase())}</span>`;
                 }
 
                 return `
                     <div class="dash-user-card">
                         <div class="user-card-top">
-                            <div class="user-card-avatar ${u.role}">${initial}</div>
+                            <div class="user-card-avatar ${roleSlug}">${initial}</div>
                             <div class="user-card-body">
                                 <div class="user-card-name-row">
-                                    <strong class="user-name-text">${this.escapeHTML(u.full_name)}</strong>
-                                    <span class="role-badge ${u.role}">${u.role.toUpperCase()}</span>
+                                    <strong class="user-name-text">${this.escapeHTML(u.full_name || '')}</strong>
+                                    <span class="role-badge ${roleSlug}">${this.escapeHTML(roleSlug.toUpperCase())}</span>
                                 </div>
                                 <div class="user-card-info-row">
-                                    <span class="user-uname-pill"><code>@${this.escapeHTML(u.username)}</code></span>
+                                    <span class="user-uname-pill"><code>@${this.escapeHTML(u.username || '')}</code></span>
                                     ${u.kelas ? `<span class="kelas-badge">${this.escapeHTML(u.kelas)}</span>` : '<span class="kelas-badge-empty">—</span>'}
                                 </div>
                             </div>
@@ -1015,26 +1051,22 @@ const DashboardApp = {
         if (btn) btn.disabled = true;
 
         try {
-            const res = await fetch('api/users.php?action=create_user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    full_name: fullName,
-                    username,
-                    password,
-                    role,
-                    kelas: (role === 'murid') ? kelas : null
-                })
+            const res = await this.apiPost('api/users.php?action=create_user', {
+                full_name: fullName,
+                username,
+                password,
+                role,
+                kelas: (role === 'murid') ? kelas : null
             });
             const data = await res.json();
 
             if (data.success) {
-                window.showToast?.(`✓ ${data.message}`);
+                window.showToast?.(data.message || 'Akun berhasil dibuat.');
                 document.getElementById('addStudentForm')?.reset();
                 this.loadStudentsManagement();
                 this.loadStats();
             } else {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Gagal membuat akun.');
             }
         } catch (err) {
             window.showToast?.('Gagal membuat akun: ' + err.message);
@@ -1043,22 +1075,21 @@ const DashboardApp = {
         }
     },
 
-    async deleteUser(id, name, role) {
-        if (!confirm(`Apakah Anda yakin ingin menghapus akun ${role.toUpperCase()} "${name}" dari database?`)) return;
+    async deleteUser(id, name = null, role = null) {
+        const userObj = this.usersList.find(u => Number(u.id) === Number(id));
+        const userName = name !== null ? name : (userObj?.full_name || '');
+        const userRole = (role !== null ? role : (userObj?.role || 'murid')).toUpperCase();
+        if (!confirm(`Apakah Anda yakin ingin menghapus akun ${userRole} "${userName}" dari database?`)) return;
 
         try {
-            const res = await fetch('api/users.php?action=delete_user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            });
+            const res = await this.apiPost('api/users.php?action=delete_user', { id });
             const data = await res.json();
             if (data.success) {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Akun berhasil dihapus.');
                 this.loadStudentsManagement();
                 this.loadStats();
             } else {
-                window.showToast?.(`⚠️ ${data.message}`);
+                window.showToast?.(data.message || 'Gagal menghapus pengguna.');
             }
         } catch (e) {
             window.showToast?.('Gagal menghapus pengguna.');
@@ -1107,26 +1138,22 @@ const DashboardApp = {
         }
 
         try {
-            const res = await fetch('api/users.php?action=create_user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    full_name: fullName,
-                    username,
-                    password,
-                    role,
-                    kelas: (role === 'murid') ? kelas : null
-                })
+            const res = await this.apiPost('api/users.php?action=create_user', {
+                full_name: fullName,
+                username,
+                password,
+                role,
+                kelas: (role === 'murid') ? kelas : null
             });
             const data = await res.json();
 
             if (data.success) {
-                window.showToast?.(`✓ ${data.message}`);
+                window.showToast?.(data.message || 'Akun berhasil dibuat.');
                 this.closeCreateUserModal();
                 this.loadStudentsManagement();
                 this.loadStats();
             } else {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Gagal membuat akun.');
             }
         } catch (err) {
             window.showToast?.('Gagal membuat akun: ' + err.message);
@@ -1219,27 +1246,23 @@ const DashboardApp = {
         }
 
         try {
-            const res = await fetch('api/users.php?action=update_user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id,
-                    full_name: fullName,
-                    username,
-                    password: password || null,
-                    role,
-                    kelas: (role === 'murid') ? kelas : null
-                })
+            const res = await this.apiPost('api/users.php?action=update_user', {
+                id,
+                full_name: fullName,
+                username,
+                password: password || null,
+                role,
+                kelas: (role === 'murid') ? kelas : null
             });
             const data = await res.json();
 
             if (data.success) {
-                window.showToast?.(`✓ ${data.message}`);
+                window.showToast?.(data.message || 'Perubahan akun berhasil disimpan.');
                 this.closeEditUserModal();
                 this.loadStudentsManagement();
                 this.loadStats();
             } else {
-                window.showToast?.(`⚠️ ${data.message || 'Gagal menyimpan perubahan'}`);
+                window.showToast?.(data.message || 'Gagal menyimpan perubahan.');
             }
         } catch (err) {
             window.showToast?.('Gagal menyimpan: ' + err.message);
@@ -1282,26 +1305,22 @@ const DashboardApp = {
         if (btn) btn.disabled = true;
 
         try {
-            const res = await fetch('api/settings.php?action=update_home', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    home_kicker: kicker,
-                    home_badge: badge,
-                    home_title: title,
-                    home_highlight: highlight,
-                    home_description: description,
-                    home_theme: theme,
-                    home_art_mode: artMode,
-                    home_custom_art: customArt
-                })
+            const res = await this.apiPost('api/settings.php?action=update_home', {
+                home_kicker: kicker,
+                home_badge: badge,
+                home_title: title,
+                home_highlight: highlight,
+                home_description: description,
+                home_theme: theme,
+                home_art_mode: artMode,
+                home_custom_art: customArt
             });
             const data = await res.json();
 
             if (data.success) {
-                window.showToast?.('✓ Hiasan dan dekorasi beranda berhasil diperbarui!');
+                window.showToast?.('Hiasan dan dekorasi beranda berhasil diperbarui.');
             } else {
-                window.showToast?.(data.message);
+                window.showToast?.(data.message || 'Gagal menyimpan dekorasi.');
             }
         } catch (err) {
             window.showToast?.('Gagal menyimpan dekorasi: ' + err.message);
@@ -1347,10 +1366,9 @@ const DashboardApp = {
         if (!totalItems) {
             container.innerHTML = `
                 <div style="text-align:center;padding:32px;background:#f8fafc;border:1px dashed var(--line);border-radius:var(--radius-md)">
-                    <div style="font-size:36px;margin-bottom:8px">🎯</div>
                     <strong>Belum ada soal kuis yang dibuat.</strong>
                     <p style="color:var(--muted);font-size:13px;margin:6px 0 14px">Klik tombol "Tambah Soal Kuis Baru" untuk membuat soal interaktif pertama.</p>
-                    <button class="btn small" onclick="DashboardApp.openAddQuizQuestionModal()">＋ Buat Soal Sekarang</button>
+                    <button class="btn small" onclick="DashboardApp.openAddQuizQuestionModal()">Buat Soal Sekarang</button>
                 </div>
             `;
             this.renderPaginationBar({
@@ -1376,10 +1394,11 @@ const DashboardApp = {
         const pageItems = this.quizQuestions.slice(startIndex, endIndex);
 
         container.innerHTML = pageItems.map((q, idx) => {
-            const optA = this.escapeHTML(q.option_a);
-            const optB = this.escapeHTML(q.option_b);
-            const optC = this.escapeHTML(q.option_c);
-            const optD = this.escapeHTML(q.option_d);
+            const qid = Number(q.id) || 0;
+            const optA = this.escapeHTML(q.option_a || '');
+            const optB = this.escapeHTML(q.option_b || '');
+            const optC = this.escapeHTML(q.option_c || '');
+            const optD = this.escapeHTML(q.option_d || '');
             const correct = parseInt(q.correct_index, 10);
             const ordNumber = startIndex + idx + 1;
 
@@ -1387,36 +1406,36 @@ const DashboardApp = {
                 <div class="dash-quiz-card">
                     <div class="dash-quiz-card-header">
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                            <span class="quiz-ord-badge">#${q.order_num || ordNumber}</span>
-                            <span class="quiz-timer-pill">⏱ ${q.time_limit || 20}d</span>
-                            <span class="quiz-points-pill">★ ${q.points || 1000} Poin</span>
+                            <span class="quiz-ord-badge">#${Number(q.order_num) || ordNumber}</span>
+                            <span class="quiz-timer-pill">${Number(q.time_limit) || 20} dtk</span>
+                            <span class="quiz-points-pill">${Number(q.points) || 1000} Poin</span>
                         </div>
                         <div class="dash-quiz-actions">
-                            <button class="btn-dash edit" onclick="DashboardApp.openEditQuizQuestionModal(${q.id})" title="Edit Soal & Jawaban">✏️ Edit</button>
-                            <button class="btn-dash delete" onclick="DashboardApp.deleteQuizQuestion(${q.id})" title="Hapus Soal">🗑 Hapus</button>
+                            <button class="btn-dash edit" onclick="DashboardApp.openEditQuizQuestionModal(${qid})" title="Edit Soal & Jawaban">Edit</button>
+                            <button class="btn-dash delete" onclick="DashboardApp.deleteQuizQuestion(${qid})" title="Hapus Soal">Hapus</button>
                         </div>
                     </div>
 
                     <div class="dash-quiz-question-text">
-                        ${this.escapeHTML(q.question)}
+                        ${this.escapeHTML(q.question || '')}
                     </div>
 
                     <div class="dash-quiz-options-grid">
                         <div class="quiz-opt-tag opt-red ${correct === 0 ? 'correct' : ''}">
-                            <span>▲ ${optA}</span>
-                            ${correct === 0 ? '<strong class="correct-badge">✓ Kunci Benar</strong>' : ''}
+                            <span>A. ${optA}</span>
+                            ${correct === 0 ? '<strong class="correct-badge">Kunci Benar</strong>' : ''}
                         </div>
                         <div class="quiz-opt-tag opt-blue ${correct === 1 ? 'correct' : ''}">
-                            <span>◆ ${optB}</span>
-                            ${correct === 1 ? '<strong class="correct-badge">✓ Kunci Benar</strong>' : ''}
+                            <span>B. ${optB}</span>
+                            ${correct === 1 ? '<strong class="correct-badge">Kunci Benar</strong>' : ''}
                         </div>
                         <div class="quiz-opt-tag opt-yellow ${correct === 2 ? 'correct' : ''}">
-                            <span>● ${optC}</span>
-                            ${correct === 2 ? '<strong class="correct-badge">✓ Kunci Benar</strong>' : ''}
+                            <span>C. ${optC}</span>
+                            ${correct === 2 ? '<strong class="correct-badge">Kunci Benar</strong>' : ''}
                         </div>
                         <div class="quiz-opt-tag opt-green ${correct === 3 ? 'correct' : ''}">
-                            <span>◼ ${optD}</span>
-                            ${correct === 3 ? '<strong class="correct-badge">✓ Kunci Benar</strong>' : ''}
+                            <span>D. ${optD}</span>
+                            ${correct === 3 ? '<strong class="correct-badge">Kunci Benar</strong>' : ''}
                         </div>
                     </div>
                 </div>
@@ -1444,7 +1463,7 @@ const DashboardApp = {
 
         if (form) form.reset();
         if (hiddenId) hiddenId.value = '';
-        if (title) title.textContent = '＋ Tambah Soal Kuis Baru';
+        if (title) title.textContent = 'Tambah Soal Kuis Baru';
         if (delBtn) delBtn.style.display = 'none';
 
         const btn = document.getElementById('btnSubmitQuizQuestion');
@@ -1456,7 +1475,8 @@ const DashboardApp = {
 
     async openEditQuizQuestionModal(questionId) {
         try {
-            const res = await fetch(`api/quiz.php?action=get_question&id=${questionId}`);
+            const qid = Number(questionId) || 0;
+            const res = await fetch(`api/quiz.php?action=get_question&id=${qid}`);
             const data = await res.json();
             if (!data.success) throw new Error(data.message);
 
@@ -1466,7 +1486,7 @@ const DashboardApp = {
             const hiddenId = document.getElementById('editQuizQuestionId');
             const delBtn = document.getElementById('btnDeleteQuizQuestion');
 
-            if (title) title.textContent = `✏️ Edit Soal Kuis #${q.order_num || ''}`;
+            if (title) title.textContent = `Edit Soal Kuis #${q.order_num || ''}`;
             if (hiddenId) hiddenId.value = q.id;
             if (delBtn) delBtn.style.display = 'inline-block';
 
@@ -1533,15 +1553,11 @@ const DashboardApp = {
                 points
             };
 
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const res = await this.apiPost(url, payload);
             const data = await res.json();
             if (!data.success) throw new Error(data.message);
 
-            window.showToast?.(data.message || '✓ Soal kuis berhasil disimpan!');
+            window.showToast?.(data.message || 'Soal kuis berhasil disimpan.');
             this.closeQuizQuestionModal();
             this.loadQuizManagement();
         } catch (err) {
@@ -1558,15 +1574,11 @@ const DashboardApp = {
         if (!confirm('Apakah Anda yakin ingin menghapus soal kuis ini dari bank soal?')) return;
 
         try {
-            const res = await fetch('api/quiz.php?action=delete_question', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: questionId })
-            });
+            const res = await this.apiPost('api/quiz.php?action=delete_question', { id: questionId });
             const data = await res.json();
             if (!data.success) throw new Error(data.message);
 
-            window.showToast?.('✓ Soal kuis berhasil dihapus.');
+            window.showToast?.('Soal kuis berhasil dihapus.');
             this.loadQuizManagement();
         } catch (err) {
             window.showToast?.('Gagal menghapus soal: ' + err.message);
@@ -1660,10 +1672,10 @@ const DashboardApp = {
 
             return `
                 <tr>
-                    <td><small style="color:var(--muted);white-space:nowrap">${this.formatDate(l.created_at)}</small></td>
+                    <td><small style="color:var(--muted);white-space:nowrap">${this.escapeHTML(this.formatDate(l.created_at))}</small></td>
                     <td><strong>${this.escapeHTML(l.user_name || 'Anonim')}</strong></td>
                     <td>${roleBadge}</td>
-                    <td style="color:var(--navy);font-weight:600">${this.escapeHTML(l.action)}</td>
+                    <td style="color:var(--navy);font-weight:600">${this.escapeHTML(l.action || '')}</td>
                 </tr>
             `;
         }).join('');
@@ -1735,17 +1747,13 @@ const DashboardApp = {
         const labelEl = document.getElementById('toggleDemoModeLabel');
 
         try {
-            const res = await fetch('api/settings.php?action=toggle_demo_mode', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled })
-            });
+            const res = await this.apiPost('api/settings.php?action=toggle_demo_mode', { enabled });
             const data = await res.json();
             if (data.success) {
                 window.showToast?.(data.message);
                 if (badgeEl) {
                     badgeEl.className = `role-badge ${enabled ? 'murid' : 'guru'}`;
-                    badgeEl.textContent = enabled ? '🟢 Akun Bawaan Aktif' : '🔒 Khusus Akun Terdaftar';
+                    badgeEl.textContent = enabled ? 'Akun Bawaan Aktif' : 'Khusus Akun Terdaftar';
                 }
                 if (labelEl) {
                     labelEl.textContent = enabled ? 'AKTIF' : 'NONAKTIF';

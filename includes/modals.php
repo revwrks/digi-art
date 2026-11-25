@@ -1,8 +1,14 @@
+<?php
+if (!defined('DIGIART_APP')) { http_response_code(403); exit; }
+require_once __DIR__ . '/../classes/SiteSetting.php';
+?>
 <!-- Modal Login -->
 <div class="modal-overlay" id="loginModal">
-    <div class="modal">
-        <button class="btn-close" onclick="App.closeLoginModal()" aria-label="Tutup Modal">×</button>
-        <h2>Masuk ke Digi-Art</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+        <button type="button" class="btn-close" onclick="App.closeLoginModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 id="loginModalTitle">Masuk ke Digi-Art</h2>
         <p class="modal-sub">Gunakan akun Siswa, Guru, atau Administrator untuk mengakses seluruh fitur.</p>
 
         <div id="loginError" style="display:none;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px"></div>
@@ -22,15 +28,18 @@
             </div>
         </form>
 
-        <?php
-        require_once __DIR__ . '/../classes/SiteSetting.php';
-        if (SiteSetting::isDemoModeEnabled()):
-        ?>
+        <?php if (SiteSetting::isDemoModeEnabled()): ?>
         <div style="margin-top:24px;border-top:1px solid var(--line);padding-top:16px">
             <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Akses Cepat (Akun Contoh):</span>
-            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-                <button type="button" class="btn secondary small" onclick="fillDemoLogin('murid', 'murid123')">👩🏻‍🎨 Siswa (Siti)</button>
-                <button type="button" class="btn secondary small" onclick="fillDemoLogin('guru', 'guru123')">👩🏻‍🏫 Guru (Ibu Nurul)</button>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                <button type="button" class="btn secondary small" onclick="fillDemoLogin('murid', 'murid123')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Siswa (Siti)
+                </button>
+                <button type="button" class="btn secondary small" onclick="fillDemoLogin('guru', 'guru123')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Guru (Ibu Nurul)
+                </button>
             </div>
         </div>
         <?php endif; ?>
@@ -39,9 +48,11 @@
 
 <!-- Modal Profil & Ganti Password Mandiri oleh Siswa/User -->
 <div class="modal-overlay" id="profileModal">
-    <div class="modal">
-        <button class="btn-close" onclick="App.closeProfileModal()" aria-label="Tutup Modal">×</button>
-        <h2>Pengaturan Akun</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+        <button type="button" class="btn-close" onclick="App.closeProfileModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 id="profileModalTitle">Pengaturan Akun</h2>
         <p class="modal-sub">Anda dapat memperbarui username dan password Anda sendiri.</p>
 
         <div id="profileError" style="display:none;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px"></div>
@@ -70,7 +81,7 @@
                 <input type="password" id="profCurrentPassword" class="field-input" placeholder="Masukkan password saat ini">
             </div>
             <div class="modal-actions" style="justify-content:space-between">
-                <button type="button" class="btn secondary" style="color:#ef4444" onclick="App.handleLogout()">Keluar (Logout)</button>
+                <button type="button" class="btn secondary" style="color:var(--accent-coral)" onclick="App.handleLogout()">Keluar (Logout)</button>
                 <div style="display:flex;gap:8px">
                     <button type="button" class="btn secondary" onclick="App.closeProfileModal()">Tutup</button>
                     <button type="submit" id="btnUpdateProfile" class="btn">Simpan Profil</button>
@@ -82,11 +93,13 @@
 
 <!-- Modal Upload Karya Pameran dengan Client-Side Image Compressor -->
 <div class="modal-overlay" id="uploadModal">
-    <div class="modal">
-        <button class="btn-close" onclick="PameranApp.closeUploadModal()" aria-label="Tutup Modal">×</button>
-        <h2>Unggah Karya ke Pameran</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="uploadModalTitle">
+        <button type="button" class="btn-close" onclick="PameranApp.closeUploadModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 id="uploadModalTitle">Unggah Karya ke Pameran</h2>
         <p class="modal-sub">
-            Gambar otomatis dikompresi di browser agar hemat kuota dan ramah hosting gratis. 
+            Gambar otomatis dikompresi di browser agar hemat kuota dan ramah hosting gratis.
             Karya akan ditinjau oleh guru sebelum diterbitkan.
         </p>
 
@@ -149,9 +162,11 @@
 
 <!-- Modal Tambah Nomor Materi Baru (Guru & Admin) -->
 <div class="modal-overlay" id="addMateriModal">
-    <div class="modal" style="max-width:620px">
-        <button class="btn-close" onclick="DashboardApp.closeAddMateriModal()" aria-label="Tutup Modal">×</button>
-        <h2>＋ Tambah Nomor Materi Baru</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addMateriModalTitle" style="max-width:620px">
+        <button type="button" class="btn-close" onclick="DashboardApp.closeAddMateriModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 id="addMateriModalTitle">Tambah Nomor Materi Baru</h2>
         <p class="modal-sub">Guru dapat menambah materi pembelajaran seni rupa baru dengan template dan gambar opsional.</p>
 
         <form id="addMateriForm" onsubmit="DashboardApp.submitAddMateri(event)">
@@ -199,7 +214,10 @@
 
             <div class="modal-actions">
                 <button type="button" class="btn secondary" onclick="DashboardApp.closeAddMateriModal()">Batal</button>
-                <button type="submit" id="btnSubmitAddMateri" class="btn">＋ Simpan Nomor Materi</button>
+                <button type="submit" id="btnSubmitAddMateri" class="btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14m-7-7h14"/></svg>
+                    Simpan Nomor Materi
+                </button>
             </div>
         </form>
     </div>
@@ -207,9 +225,11 @@
 
 <!-- Modal Edit Isi & Gambar Materi (Guru & Admin) -->
 <div class="modal-overlay" id="editMateriModal">
-    <div class="modal" style="max-width:620px">
-        <button class="btn-close" onclick="DashboardApp.closeEditMateriModal()" aria-label="Tutup Modal">×</button>
-        <h2>✏️ Edit Isi & Gambar Materi</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editMateriModalTitle" style="max-width:620px">
+        <button type="button" class="btn-close" onclick="DashboardApp.closeEditMateriModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 id="editMateriModalTitle">Edit Isi &amp; Gambar Materi</h2>
         <p class="modal-sub">Ubah judul, susunan teks, template, atau perbarui banner gambar materi.</p>
 
         <form id="editMateriForm" onsubmit="DashboardApp.submitEditMateri(event)">
@@ -257,8 +277,9 @@
             </div>
 
             <div class="modal-actions" style="justify-content:space-between">
-                <button type="button" class="btn secondary" style="color:#ef4444" onclick="DashboardApp.deleteMateriFromModal()">
-                    🗑️ Hapus Materi Ini
+                <button type="button" class="btn secondary" style="color:var(--accent-coral)" onclick="DashboardApp.deleteMateriFromModal()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    Hapus Materi Ini
                 </button>
                 <div style="display:flex;gap:8px">
                     <button type="button" class="btn secondary" onclick="DashboardApp.closeEditMateriModal()">Batal</button>
@@ -271,10 +292,12 @@
 
 <!-- Modal Tambah / Edit Soal Kuis (Guru & Admin) -->
 <div class="modal-overlay" id="quizQuestionModal">
-    <div class="modal" style="max-width:640px">
-        <button class="btn-close" onclick="DashboardApp.closeQuizQuestionModal()" aria-label="Tutup Modal">×</button>
-        <h2 id="quizQuestionModalTitle">＋ Tambah Soal Kuis Baru</h2>
-        <p class="modal-sub">Atur pertanyaan, 4 opsi jawaban, kunci jawaban yang benar, batas waktu, dan poin soal bergaya Kahoot!.</p>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="quizQuestionModalTitle" style="max-width:640px">
+        <button type="button" class="btn-close" onclick="DashboardApp.closeQuizQuestionModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 id="quizQuestionModalTitle">Tambah Soal Kuis Baru</h2>
+        <p class="modal-sub">Atur pertanyaan, 4 opsi jawaban, kunci jawaban yang benar, batas waktu, dan poin soal kuis interaktif.</p>
 
         <form id="quizQuestionForm" onsubmit="DashboardApp.submitQuizQuestion(event)">
             <input type="hidden" id="editQuizQuestionId" value="">
@@ -286,22 +309,22 @@
 
             <div class="form-row" style="margin-bottom:12px">
                 <div class="form-group" style="margin-bottom:0">
-                    <label for="qqOptionA" style="color:#ef4444;font-weight:800">▲ Opsi A (Merah):</label>
+                    <label for="qqOptionA" style="color:var(--accent-coral);font-weight:800">Opsi A (Merah):</label>
                     <input type="text" id="qqOptionA" class="field-input" placeholder="Teks opsi A" required>
                 </div>
                 <div class="form-group" style="margin-bottom:0">
-                    <label for="qqOptionB" style="color:#2563eb;font-weight:800">◆ Opsi B (Biru):</label>
+                    <label for="qqOptionB" style="color:var(--primary);font-weight:800">Opsi B (Biru):</label>
                     <input type="text" id="qqOptionB" class="field-input" placeholder="Teks opsi B" required>
                 </div>
             </div>
 
             <div class="form-row" style="margin-bottom:12px">
                 <div class="form-group" style="margin-bottom:0">
-                    <label for="qqOptionC" style="color:#d97706;font-weight:800">● Opsi C (Kuning):</label>
+                    <label for="qqOptionC" style="color:var(--accent-amber);font-weight:800">Opsi C (Kuning):</label>
                     <input type="text" id="qqOptionC" class="field-input" placeholder="Teks opsi C" required>
                 </div>
                 <div class="form-group" style="margin-bottom:0">
-                    <label for="qqOptionD" style="color:#059669;font-weight:800">◼ Opsi D (Hijau):</label>
+                    <label for="qqOptionD" style="color:var(--accent-emerald);font-weight:800">Opsi D (Hijau):</label>
                     <input type="text" id="qqOptionD" class="field-input" placeholder="Teks opsi D" required>
                 </div>
             </div>
@@ -310,10 +333,10 @@
                 <div class="form-group" style="margin-bottom:0">
                     <label for="qqCorrectIndex">Kunci Jawaban yang Benar:</label>
                     <select id="qqCorrectIndex" class="field-select">
-                        <option value="0">▲ Opsi A (Merah)</option>
-                        <option value="1">◆ Opsi B (Biru)</option>
-                        <option value="2">● Opsi C (Kuning)</option>
-                        <option value="3">◼ Opsi D (Hijau)</option>
+                        <option value="0">Opsi A (Merah)</option>
+                        <option value="1">Opsi B (Biru)</option>
+                        <option value="2">Opsi C (Kuning)</option>
+                        <option value="3">Opsi D (Hijau)</option>
                     </select>
                 </div>
                 <div class="form-group" style="margin-bottom:0">
@@ -335,8 +358,9 @@
             </div>
 
             <div class="modal-actions" style="justify-content:space-between">
-                <button type="button" class="btn secondary" id="btnDeleteQuizQuestion" style="display:none;color:#ef4444" onclick="DashboardApp.deleteQuizQuestionFromModal()">
-                    🗑️ Hapus Soal Ini
+                <button type="button" class="btn secondary" id="btnDeleteQuizQuestion" style="display:none;color:var(--accent-coral)" onclick="DashboardApp.deleteQuizQuestionFromModal()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    Hapus Soal Ini
                 </button>
                 <div style="display:flex;gap:8px;margin-left:auto">
                     <button type="button" class="btn secondary" onclick="DashboardApp.closeQuizQuestionModal()">Batal</button>
@@ -349,9 +373,11 @@
 
 <!-- Modal Tambah Akun Pengguna (Untuk Tampilan Mobile & Quick Action) -->
 <div class="modal-overlay" id="createUserModal">
-    <div class="modal" style="max-width:520px">
-        <button class="btn-close" onclick="DashboardApp.closeCreateUserModal()" aria-label="Tutup Modal">×</button>
-        <h2>＋ Tambah Akun Pengguna</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="createUserModalTitle" style="max-width:520px">
+        <button type="button" class="btn-close" onclick="DashboardApp.closeCreateUserModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 id="createUserModalTitle">Tambah Akun Pengguna</h2>
         <p class="modal-sub">Daftarkan akun Siswa, Guru, atau Administrator baru ke dalam sistem.</p>
 
         <form id="modalAddUserForm" onsubmit="DashboardApp.createUserFromModal(event)">
@@ -417,9 +443,11 @@
 
 <!-- Modal Edit Akun Pengguna (Untuk Admin dan Guru) -->
 <div class="modal-overlay" id="editUserModal">
-    <div class="modal" style="max-width:520px">
-        <button class="btn-close" onclick="DashboardApp.closeEditUserModal()" aria-label="Tutup Modal">×</button>
-        <h2>✏️ Edit Akun Pengguna</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editUserModalTitle" style="max-width:520px">
+        <button type="button" class="btn-close" onclick="DashboardApp.closeEditUserModal()" aria-label="Tutup Modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 id="editUserModalTitle">Edit Akun Pengguna</h2>
         <p class="modal-sub">Perbarui nama siswa/guru, username, kelas, atau ganti password akun.</p>
 
         <form id="modalEditUserForm" onsubmit="DashboardApp.submitEditUser(event)">
@@ -483,11 +511,8 @@
 
             <div class="modal-actions">
                 <button type="button" class="btn secondary" onclick="DashboardApp.closeEditUserModal()">Batal</button>
-                <button type="submit" id="btnSubmitEditUser" class="btn">💾 Simpan Perubahan</button>
+                <button type="submit" id="btnSubmitEditUser" class="btn">Simpan Perubahan</button>
             </div>
         </form>
     </div>
 </div>
-
-
-

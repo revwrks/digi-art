@@ -1,4 +1,5 @@
 <?php
+if (!defined('DIGIART_APP')) { http_response_code(403); exit; }
 $pageTitle = 'Pencarian Referensi Gambar — Digi-Art';
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/auth_guard.php';
@@ -22,7 +23,6 @@ include __DIR__ . '/../includes/auth_guard.php';
         <div style="display:inline-flex;align-items:center;gap:8px;background:var(--accent-emerald-light);color:var(--accent-emerald);padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid rgba(5,150,105,0.2)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <span>Filter Aman Siswa (NSFW & Konten Dewasa Dicegah)</span>
-            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent-emerald)"></span>
         </div>
         <span style="font-size:12px;color:var(--muted);font-weight:600">Kurikulum Seni Rupa SMP • 100% Edukatif</span>
     </div>

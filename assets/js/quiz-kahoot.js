@@ -25,6 +25,47 @@ class KahootQuiz {
         this.soundMuted = localStorage.getItem('kahoot_muted') === 'true';
 
         this.initAudio();
+        this.bindKeyboard();
+    }
+
+    bindKeyboard() {
+        if (this._keyboardBound) return;
+        this._keyboardBound = true;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+            const activeTag = document.activeElement?.tagName;
+            if (
+                activeTag === 'INPUT' ||
+                activeTag === 'TEXTAREA' ||
+                activeTag === 'SELECT' ||
+                document.activeElement?.isContentEditable
+            ) {
+                return;
+            }
+
+            if (this.currentOverlay) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.nextQuestion();
+                }
+                return;
+            }
+
+            if (
+                !this.answered &&
+                this.questions.length > 0 &&
+                this.currentIndex < this.questions.length &&
+                document.getElementById('optBtn_0')
+            ) {
+                const keyMap = { '1': 0, '2': 1, '3': 2, '4': 3 };
+                if (Object.prototype.hasOwnProperty.call(keyMap, e.key)) {
+                    e.preventDefault();
+                    this.selectAnswer(keyMap[e.key]);
+                }
+            }
+        });
     }
 
     initAudio() {
@@ -36,11 +77,27 @@ class KahootQuiz {
         }
     }
 
+    renderSoundButtonContent() {
+        if (this.soundMuted) {
+            return `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                <span>Bisukan</span>
+            `;
+        }
+        return `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            <span>Suara Aktif</span>
+        `;
+    }
+
     toggleSound() {
         this.soundMuted = !this.soundMuted;
         localStorage.setItem('kahoot_muted', this.soundMuted);
         const btn = document.getElementById('kahootSoundToggle');
-        if (btn) btn.textContent = this.soundMuted ? '🔇' : '🔊';
+        if (btn) {
+            btn.innerHTML = this.renderSoundButtonContent();
+            btn.setAttribute('aria-pressed', this.soundMuted ? 'true' : 'false');
+        }
         if (!this.soundMuted) {
             this.playBeep(523.25, 'triangle', 0.1);
         }
@@ -108,30 +165,35 @@ class KahootQuiz {
             </div>
         `;
         try {
-            const res = await fetch('api/quiz.php?action=get_questions');
+            const res = await App.apiFetch('api/quiz.php?action=get_questions');
             const data = await res.json();
             if (!data.success) {
                 if (data.locked) {
                     this.container.innerHTML = `
                         <div class="locked-card">
-                            <div class="lock-icon">🔒</div>
+                            <div class="lock-icon" aria-hidden="true">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </div>
                             <h2>Fitur Kuis Terkunci</h2>
-                            <p>${data.message}</p>
+                            <p>${this.escapeHTML(data.message || 'Kuis hanya dapat diakses oleh akun Siswa dan Guru.')}</p>
                             <button class="btn" onclick="openLoginModal()">Masuk Akun</button>
                         </div>
                     `;
                     return;
                 }
-                throw new Error(data.message);
+                throw new Error(data.message || 'Gagal memuat soal kuis.');
             }
 
-            this.questions = data.questions;
+            this.questions = data.questions || [];
             this.showStartScreen();
         } catch (err) {
             this.container.innerHTML = `
                 <div class="kahoot-error">
-                    <h3>⚠️ Gagal memuat kuis</h3>
-                    <p>${err.message}</p>
+                    <div style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:#fef2f2;color:#b91c1c;margin-bottom:10px" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <h3>Gagal memuat kuis</h3>
+                    <p>${this.escapeHTML(err.message || 'Terjadi kesalahan saat menghubungi server.')}</p>
                     <button class="btn" onclick="quizApp.loadQuestions()">Coba Lagi</button>
                 </div>
             `;
@@ -151,11 +213,29 @@ class KahootQuiz {
                 <h1>Digi-Art Challenge!</h1>
                 <p>Uji pemahamanmu tentang Menggambar Ilustrasi. Semakin cepat menjawab benar, semakin tinggi poin yang didapat!</p>
                 <div class="kahoot-rules">
-                    <div class="rule-item"><span>⚡</span> Cepat & Tepat (Hingga 1.000 Poin per Soal)</div>
-                    <div class="rule-item"><span>🔥</span> Bonus Beruntun (Streak Multiplier)</div>
-                    <div class="rule-item"><span>🏆</span> Papan Peringkat Kelas Realtime</div>
+                    <div class="rule-item">
+                        <span aria-hidden="true" style="display:inline-flex;color:var(--primary)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        </span>
+                        Cepat &amp; Tepat (Hingga 1.000 Poin per Soal)
+                    </div>
+                    <div class="rule-item">
+                        <span aria-hidden="true" style="display:inline-flex;color:var(--accent-amber)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                        </span>
+                        Bonus Beruntun (Streak Multiplier)
+                    </div>
+                    <div class="rule-item">
+                        <span aria-hidden="true" style="display:inline-flex;color:var(--accent-emerald)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                        </span>
+                        Papan Peringkat Kelas Realtime
+                    </div>
                 </div>
-                <button class="kahoot-btn-start" onclick="quizApp.startQuiz()">Mulai Sekarang →</button>
+                <button class="kahoot-btn-start" onclick="quizApp.startQuiz()">
+                    Mulai Sekarang
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </button>
             </div>
         `;
     }
@@ -188,10 +268,10 @@ class KahootQuiz {
                 <!-- Top Status Bar -->
                 <div class="kahoot-topbar">
                     <div class="kahoot-qnum">Soal ${this.currentIndex + 1} / ${this.questions.length}</div>
-                    <div class="kahoot-streak-badge ${this.streak > 1 ? 'active' : ''}">🔥 Streak: ${this.streak}</div>
+                    <div class="kahoot-streak-badge ${this.streak > 1 ? 'active' : ''}">Streak: ${this.streak}</div>
                     <div class="kahoot-score">Skor: <strong>${this.score.toLocaleString('id-ID')}</strong></div>
-                    <button type="button" class="btn-sound-toggle" id="kahootSoundToggle" onclick="quizApp.toggleSound()" title="Aktif/Nonaktifkan Suara Kuis" style="background:#ffffff;border:1px solid #cbd5e1;font-size:16px;cursor:pointer;padding:4px 8px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
-                        ${this.soundMuted ? '🔇' : '🔊'}
+                    <button type="button" class="btn-sound-toggle" id="kahootSoundToggle" onclick="quizApp.toggleSound()" title="Aktif/Nonaktifkan Suara Kuis" aria-pressed="${this.soundMuted ? 'true' : 'false'}" style="background:#ffffff;border:1px solid #cbd5e1;font-size:12px;font-weight:700;cursor:pointer;padding:6px 12px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.05);gap:6px">
+                        ${this.renderSoundButtonContent()}
                     </button>
                 </div>
 
@@ -251,42 +331,94 @@ class KahootQuiz {
         }, 1000);
     }
 
-    selectAnswer(chosenIdx) {
+    disableOptionButtons() {
+        for (let i = 0; i < 4; i++) {
+            const btn = document.getElementById(`optBtn_${i}`);
+            if (btn) btn.disabled = true;
+        }
+    }
+
+    async selectAnswer(chosenIdx) {
         if (this.answered) return;
         this.answered = true;
         clearInterval(this.timer);
+        this.disableOptionButtons();
 
         const q = this.questions[this.currentIndex];
-        const isCorrect = chosenIdx === parseInt(q.correct_index, 10);
+        if (!q) return;
 
-        // Hitung Poin Kahoot
-        let pointsEarned = 0;
-        if (isCorrect) {
-            this.correctCount++;
-            this.streak++;
-            if (this.streak > this.highestStreak) this.highestStreak = this.streak;
+        try {
+            const response = await App.apiFetch('api/quiz.php?action=check_answer', {
+                method: 'POST',
+                body: JSON.stringify({
+                    question_id: q.id,
+                    chosen_index: chosenIdx,
+                    time_left: this.timeLeft
+                })
+            });
+            const res = await response.json();
+            if (!res.success) {
+                throw new Error(res.message || 'Gagal memeriksa jawaban.');
+            }
 
-            // Skor dasar 500 + kecepatan hingga 500 + streak bonus
-            const speedRatio = Math.max(0.1, this.timeLeft / this.totalTime);
-            const speedBonus = Math.round(500 * speedRatio);
-            const streakBonus = Math.min(500, (this.streak - 1) * 100);
-            pointsEarned = 500 + speedBonus + streakBonus;
-            this.score += pointsEarned;
-            this.playCorrectSound();
-        } else {
-            this.streak = 0;
+            this.score = parseInt(res.total_score, 10) || 0;
+            this.streak = parseInt(res.streak, 10) || 0;
+            this.highestStreak = parseInt(res.highest_streak, 10) || this.highestStreak;
+            this.correctCount = parseInt(res.correct_count, 10) || 0;
+
+            if (res.is_correct) {
+                this.playCorrectSound();
+            } else {
+                this.playWrongSound();
+            }
+
+            this.showFeedback(
+                Boolean(res.is_correct),
+                chosenIdx,
+                parseInt(res.correct_index, 10),
+                parseInt(res.points_earned, 10) || 0,
+                false
+            );
+        } catch (err) {
             this.playWrongSound();
+            window.showToast?.(err.message || 'Gagal memverifikasi jawaban.');
+            this.showFeedback(false, chosenIdx, -1, 0, false);
         }
-
-        this.showFeedback(isCorrect, chosenIdx, parseInt(q.correct_index, 10), pointsEarned);
     }
 
-    timeOut() {
+    async timeOut() {
+        if (this.answered) return;
         this.answered = true;
-        this.streak = 0;
-        this.playWrongSound();
+        clearInterval(this.timer);
+        this.disableOptionButtons();
+
         const q = this.questions[this.currentIndex];
-        this.showFeedback(false, -1, parseInt(q.correct_index, 10), 0, true);
+        if (!q) return;
+
+        let correctIdx = -1;
+        try {
+            const response = await App.apiFetch('api/quiz.php?action=check_answer', {
+                method: 'POST',
+                body: JSON.stringify({
+                    question_id: q.id,
+                    chosen_index: -1,
+                    time_left: 0
+                })
+            });
+            const res = await response.json();
+            if (res.success) {
+                this.score = parseInt(res.total_score, 10) || 0;
+                this.streak = parseInt(res.streak, 10) || 0;
+                this.highestStreak = parseInt(res.highest_streak, 10) || this.highestStreak;
+                this.correctCount = parseInt(res.correct_count, 10) || 0;
+                correctIdx = parseInt(res.correct_index, 10);
+            }
+        } catch (err) {
+            this.streak = 0;
+        }
+
+        this.playWrongSound();
+        this.showFeedback(false, -1, correctIdx, 0, true);
     }
 
     showFeedback(isCorrect, chosenIdx, correctIdx, points, isTimeOut = false) {
@@ -303,23 +435,35 @@ class KahootQuiz {
             }
         }
 
+        let iconSvg = '';
+        if (isCorrect) {
+            iconSvg = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
+        } else if (isTimeOut) {
+            iconSvg = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+        } else {
+            iconSvg = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+        }
+
+        const isLast = this.currentIndex + 1 >= this.questions.length;
+
         // Tampilkan modal feedback gaya Kahoot
         const overlay = document.createElement('div');
         overlay.className = `kahoot-feedback-overlay ${isCorrect ? 'bg-correct' : 'bg-wrong'}`;
         overlay.innerHTML = `
-            <div class="feedback-card">
-                <div class="feedback-icon">${isCorrect ? '✓' : (isTimeOut ? '⏰' : '✗')}</div>
+            <div class="feedback-card" role="dialog" aria-modal="true">
+                <div class="feedback-icon">${iconSvg}</div>
                 <h2>${isCorrect ? 'Luar Biasa! Jawaban Benar' : (isTimeOut ? 'Waktu Habis!' : 'Belum Tepat!')}</h2>
-                <div class="feedback-points">+${points.toLocaleString('id-ID')} Poin</div>
-                ${this.streak > 1 ? `<div class="feedback-streak">🔥 Streak Bonus x${this.streak}!</div>` : ''}
+                <div class="feedback-points">+${(parseInt(points, 10) || 0).toLocaleString('id-ID')} Poin</div>
+                ${this.streak > 1 ? `<div class="feedback-streak">Streak Bonus x${this.streak}</div>` : ''}
                 <div class="feedback-total">Total Skor Saat Ini: <strong>${this.score.toLocaleString('id-ID')}</strong></div>
                 <button class="kahoot-next-btn" onclick="quizApp.nextQuestion()">
-                    ${this.currentIndex + 1 < this.questions.length ? 'Pertanyaan Berikutnya →' : 'Lihat Hasil Akhir 🏆'}
+                    ${isLast ? 'Lihat Hasil Akhir' : 'Pertanyaan Berikutnya'}
                 </button>
             </div>
         `;
         document.body.appendChild(overlay);
         this.currentOverlay = overlay;
+        overlay.querySelector('.kahoot-next-btn')?.focus();
     }
 
     nextQuestion() {
@@ -335,40 +479,41 @@ class KahootQuiz {
         this.playFanfare();
         this.container.innerHTML = `
             <div class="kahoot-result-card">
-                <div class="podium-header">🎉 Kuis Selesai!</div>
+                <div class="podium-header">Kuis Selesai!</div>
                 <div class="podium-score">${this.score.toLocaleString('id-ID')}</div>
                 <div class="podium-stats">
                     <div class="pstat"><span>Benar</span><strong>${this.correctCount} / ${this.questions.length}</strong></div>
-                    <div class="pstat"><span>Streak Tertinggi</span><strong>🔥 ${this.highestStreak}</strong></div>
+                    <div class="pstat"><span>Streak Tertinggi</span><strong>${this.highestStreak}</strong></div>
                 </div>
                 <div id="saveScoreStatus" class="podium-status">Menyimpan skor kuis ke papan peringkat…</div>
                 <div class="kahoot-actions">
-                    <button class="btn" onclick="quizApp.showStartScreen()">Ulangi Kuis 🔄</button>
-                    <button class="btn secondary" onclick="quizApp.loadLeaderboard()">Lihat Papan Peringkat 🏆</button>
+                    <button class="btn" onclick="quizApp.loadQuestions()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        Ulangi Kuis
+                    </button>
+                    <button class="btn secondary" onclick="quizApp.loadLeaderboard()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                        Lihat Papan Peringkat
+                    </button>
                 </div>
                 <div id="quizLeaderboardContainer" style="margin-top:28px"></div>
             </div>
         `;
 
-        // Kirim skor ke server
+        // Kirim permintaan simpan skor terverifikasi ke server
         try {
-            const res = await fetch('api/quiz.php?action=submit_score', {
+            const res = await App.apiFetch('api/quiz.php?action=submit_score', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    total_score: this.score,
-                    correct_count: this.correctCount,
-                    total_questions: this.questions.length,
-                    highest_streak: this.highestStreak
-                })
+                body: JSON.stringify({})
             });
             const data = await res.json();
             const statusEl = document.getElementById('saveScoreStatus');
             if (statusEl) {
                 if (data.success) {
-                    statusEl.innerHTML = `✓ Skor tersimpan! Kamu berada di peringkat <strong>#${data.rank}</strong> di kelas.`;
+                    const rankNum = parseInt(data.rank, 10) || 1;
+                    statusEl.innerHTML = `Skor tersimpan! Kamu berada di peringkat <strong>#${rankNum}</strong> di kelas.`;
                 } else {
-                    statusEl.textContent = 'Skor tercatat di sesi ini.';
+                    statusEl.textContent = data.message || 'Skor tercatat di sesi ini.';
                 }
             }
         } catch (e) {
@@ -382,7 +527,7 @@ class KahootQuiz {
         if (!box) return;
         box.innerHTML = '<p>Memuat papan peringkat…</p>';
         try {
-            const res = await fetch('api/quiz.php?action=get_leaderboard');
+            const res = await App.apiFetch('api/quiz.php?action=get_leaderboard');
             const data = await res.json();
             if (!data.success || !data.leaderboard.length) {
                 box.innerHTML = '<p>Belum ada data nilai kuis.</p>';
@@ -391,7 +536,10 @@ class KahootQuiz {
 
             box.innerHTML = `
                 <div class="leaderboard-table-wrap">
-                    <h3>🏆 Papan Peringkat Siswa</h3>
+                    <h3 style="display:flex;align-items:center;justify-content:center;gap:8px">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                        Papan Peringkat Siswa
+                    </h3>
                     <table class="kahoot-table">
                         <thead>
                             <tr>
@@ -405,11 +553,11 @@ class KahootQuiz {
                         <tbody>
                             ${data.leaderboard.map((item, idx) => `
                                 <tr class="${idx < 3 ? 'top-rank rank-' + (idx + 1) : ''}">
-                                    <td>${idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : idx + 1))}</td>
+                                    <td><strong>${idx + 1}.</strong></td>
                                     <td><strong>${this.escapeHTML(item.student_name)}</strong></td>
                                     <td>${this.escapeHTML(item.kelas || 'VIII')}</td>
-                                    <td><span class="score-badge">${parseInt(item.total_score, 10).toLocaleString('id-ID')} pts</span></td>
-                                    <td>${item.correct_count}/${item.total_questions}</td>
+                                    <td><span class="score-badge">${(parseInt(item.total_score, 10) || 0).toLocaleString('id-ID')} pts</span></td>
+                                    <td>${parseInt(item.correct_count, 10) || 0}/${parseInt(item.total_questions, 10) || 0}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -422,7 +570,7 @@ class KahootQuiz {
     }
 
     escapeHTML(str) {
-        return String(str).replace(/[&<>"']/g, m => ({
+        return String(str ?? '').replace(/[&<>"']/g, m => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
         }[m]));
     }

@@ -1,4 +1,5 @@
 <?php
+if (!defined('DIGIART_APP')) { http_response_code(403); exit; }
 $pageTitle = 'Dashboard Guru & Admin — Digi-Art';
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/auth_guard.php';
@@ -141,8 +142,9 @@ $materiHeader = $materiModel->getHeader();
                 </p>
             </div>
             <div>
-                <button class="btn small" onclick="DashboardApp.openAddMateriModal()">
-                    ＋ Tambah Nomor Materi Baru
+                <button type="button" class="btn small" onclick="DashboardApp.openAddMateriModal()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14m-7-7h14"/></svg>
+                    Tambah Nomor Materi Baru
                 </button>
             </div>
         </div>
@@ -152,14 +154,16 @@ $materiHeader = $materiModel->getHeader();
             <div class="materi-header-setting-top">
                 <div>
                     <h4 style="font-size:15px;margin:0 0 4px 0;display:flex;align-items:center;gap:8px">
-                        <span>🏷️</span> Informasi Bab & Judul Materi Pembelajaran
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                        Informasi Bab &amp; Judul Materi Pembelajaran
                     </h4>
                     <p style="font-size:13px;color:var(--muted);margin:0">
                         Atur nama bab, judul materi pokok, dan deskripsi pengantar yang akan tampil pada banner halaman Materi siswa.
                     </p>
                 </div>
                 <button type="button" class="btn small" onclick="DashboardApp.saveMateriHeader()" id="btnSaveMateriHeader">
-                    💾 Simpan Judul & Bab
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Simpan Judul &amp; Bab
                 </button>
             </div>
             <div class="form-row materi-header-inputs-row">
@@ -191,8 +195,9 @@ $materiHeader = $materiModel->getHeader();
                 </p>
             </div>
             <div>
-                <button class="btn small" onclick="DashboardApp.openAddQuizQuestionModal()">
-                    ＋ Tambah Soal Kuis Baru
+                <button type="button" class="btn small" onclick="DashboardApp.openAddQuizQuestionModal()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14m-7-7h14"/></svg>
+                    Tambah Soal Kuis Baru
                 </button>
             </div>
         </div>
@@ -277,7 +282,8 @@ $materiHeader = $materiModel->getHeader();
                     </div>
 
                     <button type="submit" id="btnCreateStudent" class="btn small" style="width:100%;margin-top:8px">
-                        ＋ Simpan Akun Pengguna
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14m-7-7h14"/></svg>
+                        Simpan Akun Pengguna
                     </button>
                 </form>
             </div>
@@ -294,11 +300,18 @@ $materiHeader = $materiModel->getHeader();
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <!-- View Toggle: Kartu vs Tabel -->
                         <div class="user-view-toggle">
-                            <button type="button" class="btn-view-toggle" id="btnViewCards" onclick="DashboardApp.setUserView('cards')" title="Tampilan Kartu">🗂️ Kartu</button>
-                            <button type="button" class="btn-view-toggle" id="btnViewTable" onclick="DashboardApp.setUserView('table')" title="Tampilan Tabel">📋 Tabel</button>
+                            <button type="button" class="btn-view-toggle" id="btnViewCards" onclick="DashboardApp.setUserView('cards')" title="Tampilan Kartu">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                Kartu
+                            </button>
+                            <button type="button" class="btn-view-toggle" id="btnViewTable" onclick="DashboardApp.setUserView('table')" title="Tampilan Tabel">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                                Tabel
+                            </button>
                         </div>
                         <button type="button" class="btn small btn-mobile-create-user" onclick="DashboardApp.openCreateUserModal()">
-                            ＋ Tambah Akun Baru
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14m-7-7h14"/></svg>
+                            Tambah Akun Baru
                         </button>
                     </div>
                 </div>
@@ -306,7 +319,7 @@ $materiHeader = $materiModel->getHeader();
                 <!-- Filter & Search Bar untuk Manajemen Akun -->
                 <div class="dash-user-filter-bar" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#f8fafc;padding:10px 14px;border:1px solid var(--line);border-radius:var(--radius-md);margin-bottom:14px">
                     <div style="flex:1;min-width:200px">
-                        <input type="text" id="userSearchInput" class="field-input" style="padding:7px 12px;font-size:13px;margin:0" placeholder="🔍 Cari nama siswa atau username..." oninput="DashboardApp.onUsersSearch(this.value)">
+                        <input type="text" id="userSearchInput" class="field-input" style="padding:7px 12px;font-size:13px;margin:0" placeholder="Cari nama siswa atau username..." oninput="DashboardApp.onUsersSearch(this.value)" aria-label="Cari nama siswa atau username">
                     </div>
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <select id="userClassFilter" class="field-select" style="padding:7px 10px;font-size:12px;margin:0;width:auto" onchange="DashboardApp.onUsersClassFilter(this.value)">
@@ -382,7 +395,10 @@ $materiHeader = $materiModel->getHeader();
                 <p style="font-size:13px;color:var(--muted)">Riwayat aksi pengguna, login, pengiriman karya, kurasi pameran, dan pembaruan materi.</p>
             </div>
             <div>
-                <button type="button" class="btn secondary small" onclick="DashboardApp.loadActivityLogs()">↻ Segarkan Log</button>
+                <button type="button" class="btn secondary small" onclick="DashboardApp.loadActivityLogs()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    Segarkan Log
+                </button>
             </div>
         </div>
 
@@ -408,9 +424,10 @@ $materiHeader = $materiModel->getHeader();
 
     <!-- Panel 5: Pengaturan Hiasan & Tampilan Beranda (Khusus Administrator) -->
     <?php if ($isAdmin): ?>
+    <?php $activeTheme = ($homeSettings['home_theme'] ?? 'blue') === 'purple' ? 'slate' : ($homeSettings['home_theme'] ?? 'blue'); ?>
     <div class="dash-panel" id="panel-dekorasi">
         <div style="margin-bottom:20px">
-            <h3 style="font-size:18px;margin-bottom:4px">🎨 Pengaturan Hiasan & Tampilan Beranda (Index)</h3>
+            <h3 style="font-size:18px;margin-bottom:4px">Pengaturan Hiasan &amp; Tampilan Beranda (Index)</h3>
             <p style="font-size:13px;color:var(--muted)">
                 Sebagai Administrator, Anda dapat secara fleksibel mengubah teks sambutan, banner kicker, badge pengumuman, tema gradien, dan gambar hiasan beranda.
             </p>
@@ -424,7 +441,7 @@ $materiHeader = $materiModel->getHeader();
                 </div>
                 <div class="form-group">
                     <label for="decorBadge">Badge Pengumuman / Info:</label>
-                    <input type="text" id="decorBadge" class="field-input" value="<?= htmlspecialchars($homeSettings['home_badge'] ?? '✨ Kurikulum Seni Rupa SMP • Kelas VIII') ?>">
+                    <input type="text" id="decorBadge" class="field-input" value="<?= htmlspecialchars($homeSettings['home_badge'] ?? 'Kurikulum Seni Rupa SMP • Kelas VIII') ?>">
                 </div>
             </div>
 
@@ -448,17 +465,17 @@ $materiHeader = $materiModel->getHeader();
                 <div class="form-group">
                     <label for="decorTheme">Tema Aksen Warna Beranda:</label>
                     <select id="decorTheme" class="field-select">
-                        <option value="blue" <?= ($homeSettings['home_theme'] ?? '') === 'blue' ? 'selected' : '' ?>>🔵 Biru Modern Studio (Default)</option>
-                        <option value="crimson" <?= ($homeSettings['home_theme'] ?? '') === 'crimson' ? 'selected' : '' ?>>🔴 Merah Crimson Dinamis</option>
-                        <option value="emerald" <?= ($homeSettings['home_theme'] ?? '') === 'emerald' ? 'selected' : '' ?>>🟢 Hijau Emerald Alami</option>
-                        <option value="purple" <?= ($homeSettings['home_theme'] ?? '') === 'purple' ? 'selected' : '' ?>>🟣 Ungu Royal Artistik</option>
+                        <option value="blue" <?= $activeTheme === 'blue' ? 'selected' : '' ?>>Biru Modern Studio (Default)</option>
+                        <option value="crimson" <?= $activeTheme === 'crimson' ? 'selected' : '' ?>>Merah Crimson Dinamis</option>
+                        <option value="emerald" <?= $activeTheme === 'emerald' ? 'selected' : '' ?>>Hijau Emerald Alami</option>
+                        <option value="slate" <?= $activeTheme === 'slate' ? 'selected' : '' ?>>Grafit Studio</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="decorArtMode">Model Hiasan Visual Hero:</label>
                     <select id="decorArtMode" class="field-select" onchange="DashboardApp.toggleCustomArtInput(this.value)">
-                        <option value="svg_default" <?= ($homeSettings['home_art_mode'] ?? '') === 'svg_default' ? 'selected' : '' ?>>🎨 Ilustrasi Lanskap Seni Rupa (SVG Default)</option>
-                        <option value="custom" <?= ($homeSettings['home_art_mode'] ?? '') === 'custom' ? 'selected' : '' ?>>🖼️ Gambar Kustom Sendiri (URL)</option>
+                        <option value="svg_default" <?= ($homeSettings['home_art_mode'] ?? '') === 'svg_default' ? 'selected' : '' ?>>Ilustrasi Studio Seni Rupa (Default)</option>
+                        <option value="custom" <?= ($homeSettings['home_art_mode'] ?? '') === 'custom' ? 'selected' : '' ?>>Gambar Kustom Sendiri (URL)</option>
                     </select>
                 </div>
             </div>
@@ -466,15 +483,17 @@ $materiHeader = $materiModel->getHeader();
             <div class="form-group" id="decorCustomArtGroup" style="<?= ($homeSettings['home_art_mode'] ?? '') === 'custom' ? '' : 'display:none' ?>">
                 <label for="decorCustomArt">URL Gambar Kustom Hiasan Beranda:</label>
                 <input type="text" id="decorCustomArt" class="field-input" value="<?= htmlspecialchars($homeSettings['home_custom_art'] ?? '') ?>" placeholder="Contoh: assets/img/sample-volcano.svg atau URL gambar eksternal">
-                <small style="color:var(--muted);font-size:11px">Gambar akan tampil menggantikan ilustrasi SVG bawaan di kartu sisi kanan banner hero.</small>
+                <small style="color:var(--muted);font-size:11px">Gambar akan tampil menggantikan ilustrasi bawaan di kartu sisi kanan banner hero.</small>
             </div>
 
             <div style="margin-top:20px;display:flex;gap:12px;align-items:center">
                 <button type="submit" id="btnSaveDecorations" class="btn">
-                    💾 Simpan Pengaturan Hiasan Beranda
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Simpan Pengaturan Hiasan Beranda
                 </button>
                 <a href="index.php" target="_blank" class="btn secondary">
-                    👁️ Lihat Tampilan Beranda
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Lihat Tampilan Beranda
                 </a>
             </div>
         </form>
@@ -483,7 +502,7 @@ $materiHeader = $materiModel->getHeader();
     <!-- Panel 6: Pengaturan Akses Akun Bawaan & Sistem (Khusus Administrator) -->
     <div class="dash-panel" id="panel-pengaturan">
         <div style="margin-bottom:20px">
-            <h3 style="font-size:18px;margin-bottom:4px">🛠️ Pengaturan Akses Akun & Keamanan Sistem</h3>
+            <h3 style="font-size:18px;margin-bottom:4px">Pengaturan Akses Akun &amp; Keamanan Sistem</h3>
             <p style="font-size:13px;color:var(--muted)">
                 Atur ketersediaan akun contoh bawaan (murid/guru) dan visibilitas menu pembelajaran untuk pengunjung yang belum login.
             </p>
@@ -493,10 +512,12 @@ $materiHeader = $materiModel->getHeader();
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
                 <div style="flex:1;min-width:280px">
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-                        <span style="font-size:24px">👥</span>
+                        <span style="width:36px;height:36px;border-radius:8px;background:var(--primary-light);color:var(--primary);display:inline-flex;align-items:center;justify-content:center" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </span>
                         <strong style="font-size:17px;color:var(--navy)">Status Akses Akun Bawaan</strong>
                         <span id="demoModeBadge" class="role-badge <?= $isDemoMode ? 'murid' : 'guru' ?>" style="font-size:12px;padding:4px 10px">
-                            <?= $isDemoMode ? '🟢 Akun Bawaan Aktif' : '🔒 Khusus Akun Terdaftar' ?>
+                            <?= $isDemoMode ? 'Akun Bawaan Aktif' : 'Khusus Akun Terdaftar' ?>
                         </span>
                     </div>
 
@@ -506,7 +527,7 @@ $materiHeader = $materiModel->getHeader();
                             <ul style="font-size:12px;color:#15803d;margin:0;padding-left:16px;line-height:1.5">
                                 <li>Akun contoh siswa (<code>murid</code>) dan guru (<code>guru</code>) dapat digunakan untuk mencoba fitur aplikasi.</li>
                                 <li>Tombol akses cepat akun contoh muncul pada jendela masuk.</li>
-                                <li>Menu fitur pembelajaran tetap terlihat di navigasi dengan tanda kunci (🔒) sebelum masuk.</li>
+                                <li>Menu fitur pembelajaran tetap terlihat di navigasi sebelum masuk.</li>
                             </ul>
                         </div>
                         <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px">
@@ -521,7 +542,7 @@ $materiHeader = $materiModel->getHeader();
                     </div>
 
                     <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:8px">
-                        <span>🛡️</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex-shrink:0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         <span><strong>Proteksi Keamanan:</strong> Akun administrator hanya dapat diakses melalui login resmi untuk menjaga keamanan sistem sekolah.</span>
                     </div>
                 </div>

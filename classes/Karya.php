@@ -7,6 +7,7 @@
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/Activity.php';
+require_once __DIR__ . '/Security.php';
 
 class Karya {
     private Database $db;
@@ -69,6 +70,10 @@ class Karya {
 
         if (empty($title) || empty($creatorName) || empty($imagePath)) {
             return ['success' => false, 'message' => 'Judul karya, nama pembuat, dan gambar karya wajib diisi.'];
+        }
+
+        if (!Security::isSafeUploadPath($imagePath)) {
+            return ['success' => false, 'message' => 'Path gambar karya tidak valid. Silakan unggah gambar melalui formulir resmi.'];
         }
 
         $user = Auth::user();
@@ -151,10 +156,17 @@ class Karya {
 
         $karya = $this->db->fetch("SELECT * FROM pameran_karya WHERE id = :id", [':id' => $id]);
         if ($karya) {
-            // Hapus file gambar jika ada di uploads/
+            // Hapus file gambar jika ada di uploads/ (dengan verifikasi realpath ketat)
             if (!empty($karya['image_path']) && !str_starts_with($karya['image_path'], 'assets/') && !str_starts_with($karya['image_path'], 'http')) {
-                $realFile = __DIR__ . '/../' . ltrim($karya['image_path'], '/');
-                if (file_exists($realFile)) {
+                $realUploadDir = realpath(UPLOAD_DIR);
+                $candidatePath = __DIR__ . '/../' . ltrim($karya['image_path'], '/\\');
+                $realFile = realpath($candidatePath);
+                if (
+                    $realUploadDir !== false &&
+                    $realFile !== false &&
+                    str_starts_with($realFile, $realUploadDir . DIRECTORY_SEPARATOR) &&
+                    is_file($realFile)
+                ) {
                     @unlink($realFile);
                 }
             }
@@ -166,11 +178,43 @@ class Karya {
     }
 
     /**
-     * Beri Apresiasi (Like) pada karya
+     * Beri Apresiasi (Like) pada karya yang sudah disetujui dengan deduplikasi per sesi
      */
     public function like(int $id): array {
-        $this->db->query("UPDATE pameran_karya SET likes_count = likes_count + 1 WHERE id = :id", [':id' => $id]);
-        $karya = $this->db->fetch("SELECT likes_count FROM pameran_karya WHERE id = :id", [':id' => $id]);
-        return ['success' => true, 'likes' => (int)($karya['likes_count'] ?? 0)];
+        if ($id <= 0) {
+            return ['success' => false, 'message' => 'ID karya tidak valid.'];
+        }
+
+        $karya = $this->db->fetch(
+            "SELECT id, likes_count, status FROM pameran_karya WHERE id = :id",
+            [':id' => $id]
+        );
+        if (!$karya || ($karya['status'] ?? '') !== 'approved') {
+            return ['success' => false, 'message' => 'Karya tidak ditemukan atau belum disetujui.'];
+        }
+
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+        if (!isset($_SESSION['liked_works']) || !is_array($_SESSION['liked_works'])) {
+            $_SESSION['liked_works'] = [];
+        }
+
+        if (!empty($_SESSION['liked_works'][$id])) {
+            return [
+                'success'       => true,
+                'likes'         => (int)$karya['likes_count'],
+                'already_liked' => true
+            ];
+        }
+
+        $this->db->query(
+            "UPDATE pameran_karya SET likes_count = likes_count + 1 WHERE id = :id AND status = 'approved'",
+            [':id' => $id]
+        );
+        $_SESSION['liked_works'][$id] = true;
+
+        $updated = $this->db->fetch("SELECT likes_count FROM pameran_karya WHERE id = :id", [':id' => $id]);
+        return ['success' => true, 'likes' => (int)($updated['likes_count'] ?? $karya['likes_count'])];
     }
 }

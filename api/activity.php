@@ -7,7 +7,10 @@
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../classes/Auth.php';
+require_once __DIR__ . '/../classes/Security.php';
 require_once __DIR__ . '/../classes/Activity.php';
+
+Security::sendSecurityHeaders();
 
 if (!Auth::canManageMateri()) {
     http_response_code(403);

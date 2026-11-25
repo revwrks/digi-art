@@ -7,6 +7,7 @@
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/Activity.php';
+require_once __DIR__ . '/Security.php';
 
 class SiteSetting {
     private Database $db;
@@ -66,14 +67,30 @@ class SiteSetting {
             'materi_description'
         ];
 
+        $allowedThemes = ['blue', 'crimson', 'emerald', 'slate'];
+        $toSave = [];
+
         foreach ($data as $k => $v) {
-            if (in_array($k, $allowedKeys)) {
+            if (in_array($k, $allowedKeys, true)) {
                 $val = trim((string)$v);
-                $this->db->query(
-                    "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) 
-                     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()",
-                    [$k, $val]
-                );
+                if ($k === 'home_custom_art' && $val !== '' && !Security::isSafeAssetOrHttpsUrl($val)) {
+                    return ['success' => false, 'message' => 'URL gambar ilustrasi beranda tidak valid. Gunakan aset internal atau tautan HTTPS yang aman.'];
+                }
+                if ($k === 'home_theme' && !in_array($val, $allowedThemes, true)) {
+                    $val = 'blue';
+                }
+                $toSave[$k] = $val;
+            }
+        }
+
+        foreach ($toSave as $k => $val) {
+            $this->db->query(
+                "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) 
+                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()",
+                [$k, $val]
+            );
+            if ($k === 'demo_mode') {
+                self::$demoModeCache = ($val === '1');
             }
         }
 
